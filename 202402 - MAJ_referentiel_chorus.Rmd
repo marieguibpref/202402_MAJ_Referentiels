@@ -67,31 +67,32 @@ prog <- prog_domaines_fonct %>%
   rename("Code Programme" = "Programme de financement",
          "Intitulé" = "Description",
          "Date validité Début" = "Valide à partir du",
-         "Date validité Fin" = "Fin de validité") %>% 
-  filter(nchar(`Code Programme`) == 4)
-
+         "Date validité Fin" = "Fin de validité") 
 head(prog)
-  
 ```
+
+
+
 
 
 ## Comparaison des deux fichiers
 
+On compare d'abord les noms de colonnes pour être sur qu'ils se correspondent bien.
+
 ```{r}
-BUCKET <- "marieguibert2"
-FILE_KEY_S3 <- "202402 - MAJ Référentiels/Historique/xlsxCalculette_Chorus_2019-12-01.xlsx"
-
-prog <- 
-  aws.s3::s3read_using(
-    FUN = readxl::read_excel
-    object = FILE_KEY_S3,
-    bucket = BUCKET,
-    opts = list("region" = "")
-  )
-
-prog <- prog %>% 
-  select(-1)
+cat("Noms de colonnes shogun : ", paste0(colnames(shogun_prog), collapse = "/"))
+cat('\n')
+cat("Noms de colonnes  DRFIP :",paste0(colnames(prog), collapse = "/"))
 ```
+
+On réalise une jointure pour récupérer les programmes de shogun et ceux de la drfip
+
+```{r}
+comp_prog <- merge(shogun_prog, prog, by = "Code Programme", all.x = T, all.y = T, suffixes = c('_shogun','_drfip'))
+head(comp_prog)
+```
+
+
 
 ## Conclusion
 
