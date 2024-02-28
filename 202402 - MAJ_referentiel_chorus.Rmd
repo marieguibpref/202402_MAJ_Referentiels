@@ -34,6 +34,11 @@ shogun_prog <-
 head(shogun_prog)
 ```
 
+```{r}
+dim(shogun_prog)
+```
+
+On dispose de 352 programmes pour la calculette de shogun en date du 27/02/2024
 
 ### DRFIP
 
@@ -41,7 +46,7 @@ head(shogun_prog)
 #install.packages("readODS")
 library(readODS)
 
-FILE_KEY_S3 <- "202402 - MAJ Référentiels/Fichiers DRFIP/référentiel programmes de financement 2024.ods"
+FILE_KEY_S3 <- "202402 - MAJ Référentiels/Fichiers DRFIP/référentiel domaines fonctionnels 2024.ods"
 
 prog_domaines_fonct <- 
   aws.s3::s3read_using(
@@ -55,24 +60,30 @@ head(prog_domaines_fonct)
 ```
 
 On retravaille le fichier pour :
-- garder les lignes où le code est de longueur 4 pour n'avoir que les programmes
 - avoir les mêmes colonnes que dans la calculette shogun 
 - renommer les colonnes pour avoir les mêmes noms
+- garder les lignes où le code est de longueur 4 pour n'avoir que les programmes
 
 ```{r}
 library(dplyr)
+library(stringr)
 
 prog <- prog_domaines_fonct %>% 
-  select(1,3:5) %>% 
-  rename("Code Programme" = "Programme de financement",
-         "Intitulé" = "Description",
+  rename("Code Programme" = "Domaine fonctionnel",
+         "Intitulé" = "Texte esp. fcts",
          "Date validité Début" = "Valide à partir du",
-         "Date validité Fin" = "Fin de validité") 
+         "Date validité Fin" = "Fin de validité") %>% 
+  filter(!str_detect(`Code Programme`, "-"))
+
 head(prog)
 ```
 
+```{r}
+dim(prog)
+```
 
 
+Suite à ces traitements, on obtient 370 programmes pour le fichier de la DRFIP
 
 
 ## Comparaison des deux fichiers
@@ -86,15 +97,64 @@ cat("Noms de colonnes  DRFIP :",paste0(colnames(prog), collapse = "/"))
 ```
 
 On réalise une jointure pour récupérer les programmes de shogun et ceux de la drfip
+- On se base sur le code du programme pour la fusion
+- On conserve toutes les lignes du fichier shogun et toutes les lignes du fichier de la drfip
+- Pour voir quel Intitulé de programme garder, on ajoute des suffixes
 
 ```{r}
-comp_prog <- merge(shogun_prog, prog, by = "Code Programme", all.x = T, all.y = T, suffixes = c('_shogun','_drfip'))
+comp_prog <- merge(shogun_prog, prog, 
+                   by = c("Code Programme"), 
+                   all.x = T, all.y = T, 
+                   suffixes = c('_shogun','_drfip'))
+```
+
+Modification des dates :
+
+- On ne garde pas la date de début de shogun car elle contient moins d'historique que celle de la drfip
+- On ne garde pas la date de fin de la drfip car elle est moins souvent actualisée
+
+```{r}
+comp_prog <- comp_prog %>% 
+  select(-`Date validité Début_shogun`,  # suppression des colonnes
+         -`Date validité Fin_drfip`) %>% 
+  rename("Date validité Début" = "Date validité Début_drfip" ,  # renommage pour correspondre au fichier attendu
+         "Date validité Fin" = "Date validité Fin_shogun")
+
 head(comp_prog)
 ```
 
+On fusionne les colonnes Initulé_drfip avec Intitulé_shogun pour obtenir une seule colonne Intitulé
 
+Règle : 
+- Par défaut on prend l'intitulé de shogun car il est plus complet
+- Si le nom est dupliqué pour l'intitulé shogun alors la première fois on prend clui de shogun sinon on prend celui de la drfip
+- Si le nom n'est pas renseigné dans shogun alors on prend celui de la DRFIP 
+
+```{r}
+library(dplyr)
+
+# Identifier les lignes avec des Intitulé_chorus répétées
+duplicated_rows <- duplicated(comp_prog$Intitulé_shogun)
+
+# Modifier la colonne Intitulé en fonction des conditions
+comp_prog$Intitulé <- ifelse(duplicated_rows, comp_prog$Intitulé_drfip, comp_prog$Intitulé_shogun)
+
+# Supprimer les colonnes devenues redondantes si nécessaire
+comp_prog$Intitulé_shogun <- NULL
+comp_prog$Intitulé_drfip <- NULL
+```
 
 ## Conclusion
+
+```{r}
+head(comp_prog)
+```
+
+```{r}
+dim(comp_prog)
+```
+
+On obtient 412 programmes au final (avec 352 au départ pour shogun)
 
 
 ## Export du fichier actualisé
