@@ -1,1 +1,153 @@
-202402 - MAJ_referentiel_chorus.Rmd
+---
+title: "Historique_referentiels"
+output: html_document
+author: "Marie"
+date: "2024-02-28"
+---
+
+Ce document a pour but de mettre à jour les référentiels extraits de la calculette shogun grâce aux fichiers déposés sur Resana par la DRFIP. 
+
+# Programmes
+
+## Importation des données 
+
+### Calculette shogun
+
+```{r}
+library(aws.s3)
+#install.packages("readxl")
+library(readxl)
+
+BUCKET <- "marieguibert2"
+FILE_KEY_S3 <- "202402 - MAJ Référentiels/Calculette_Chorus_2024-02-27.xlsx"
+
+shogun_prog <- 
+  aws.s3::s3read_using(
+    FUN = readxl::read_excel, 
+    sheet = "03 - Programmes",
+    skip = 8,
+    object = FILE_KEY_S3,
+    bucket = BUCKET,
+    opts = list("region" = "")
+  )
+
+head(shogun_prog)
+```
+
+
+### DRFIP
+
+```{r}
+#install.packages("readODS")
+library(readODS)
+
+FILE_KEY_S3 <- "202402 - MAJ Référentiels/Fichiers DRFIP/référentiel programmes de financement 2024.ods"
+
+prog_domaines_fonct <- 
+  aws.s3::s3read_using(
+    FUN = readODS::read_ods, 
+    object = FILE_KEY_S3,
+    bucket = BUCKET,
+    opts = list("region" = "")
+  )
+
+head(prog_domaines_fonct)
+```
+
+On retravaille le fichier pour :
+- garder les lignes où le code est de longueur 4 pour n'avoir que les programmes
+- avoir les mêmes colonnes que dans la calculette shogun 
+- renommer les colonnes pour avoir les mêmes noms
+
+```{r}
+library(dplyr)
+
+prog <- prog_domaines_fonct %>% 
+  select(1,3:5) %>% 
+  rename("Code Programme" = "Programme de financement",
+         "Intitulé" = "Description",
+         "Date validité Début" = "Valide à partir du",
+         "Date validité Fin" = "Fin de validité") %>% 
+  filter(nchar(`Code Programme`) == 4)
+
+head(prog)
+  
+```
+
+
+## Comparaison des deux fichiers
+
+```{r}
+BUCKET <- "marieguibert2"
+FILE_KEY_S3 <- "202402 - MAJ Référentiels/Historique/xlsxCalculette_Chorus_2019-12-01.xlsx"
+
+prog <- 
+  aws.s3::s3read_using(
+    FUN = readxl::read_excel
+    object = FILE_KEY_S3,
+    bucket = BUCKET,
+    opts = list("region" = "")
+  )
+
+prog <- prog %>% 
+  select(-1)
+```
+
+## Conclusion
+
+
+## Export du fichier actualisé
+
+```{r}
+BUCKET_OUT = "marieguibert2"
+FILE_KEY_OUT_S3 = "202402 - MAJ Référentiels/.....csv"
+
+aws.s3::s3write_using(
+    df,
+    FUN = readr::write_csv,
+    object = FILE_KEY_OUT_S3,
+    bucket = BUCKET_OUT,
+    opts = list("region" = "")
+)
+```
+
+# Domaines fonctionnels
+
+## Importation des données
+
+
+## Comparaison des deux fichiers
+
+
+## Conclusion
+
+
+## Export du fichier actualisé
+
+# Référentiels de programmation
+
+## Importation des données
+
+
+## Comparaison des deux fichiers
+
+
+## Conclusion
+
+
+## Export du fichier actualisé
+
+
+# Centres de coûts
+
+
+## Importation des données
+
+
+## Comparaison des deux fichiers
+
+
+## Conclusion
+
+
+## Export du fichier actualisé
