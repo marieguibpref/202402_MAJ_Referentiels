@@ -7,17 +7,27 @@ date: "2024-02-28"
 
 Ce document a pour but de mettre à jour les référentiels extraits de la calculette shogun grâce aux fichiers déposés sur Resana par la DRFIP. 
 
-# Programmes
 
-## Importation des données 
-
-### Calculette shogun
+# Environnement de travail
 
 ```{r}
 library(aws.s3)
 #install.packages("readxl")
 library(readxl)
+#install.packages("readODS")
+library(readODS)
+library(dplyr)
+library(stringr)
+library(dplyr)
+```
 
+# 1. Programmes
+
+## 1.1. Importation des données 
+
+### Calculette shogun
+
+```{r}
 BUCKET <- "marieguibert2"
 FILE_KEY_S3 <- "202402 - MAJ Référentiels/Calculette_Chorus_2024-02-27.xlsx"
 
@@ -43,9 +53,6 @@ On dispose de 352 programmes pour la calculette de shogun en date du 27/02/2024
 ### DRFIP
 
 ```{r}
-#install.packages("readODS")
-library(readODS)
-
 FILE_KEY_S3 <- "202402 - MAJ Référentiels/Fichiers DRFIP/référentiel domaines fonctionnels 2024.ods"
 
 prog_domaines_fonct <- 
@@ -65,9 +72,6 @@ On retravaille le fichier pour :
 - garder les lignes où le code est de longueur 4 pour n'avoir que les programmes
 
 ```{r}
-library(dplyr)
-library(stringr)
-
 prog <- prog_domaines_fonct %>% 
   rename("Code Programme" = "Domaine fonctionnel",
          "Intitulé" = "Texte esp. fcts",
@@ -86,7 +90,7 @@ dim(prog)
 Suite à ces traitements, on obtient 370 programmes pour le fichier de la DRFIP
 
 
-## Comparaison des deux fichiers
+## 1.2. Comparaison des deux fichiers
 
 On compare d'abord les noms de colonnes pour être sur qu'ils se correspondent bien.
 
@@ -131,8 +135,6 @@ Règle :
 - Si le nom n'est pas renseigné dans shogun alors on prend celui de la DRFIP 
 
 ```{r}
-library(dplyr)
-
 # Identifier les lignes avec des Intitulé_chorus répétées
 duplicated_rows <- duplicated(comp_prog$Intitulé_shogun)
 
@@ -144,7 +146,7 @@ comp_prog$Intitulé_shogun <- NULL
 comp_prog$Intitulé_drfip <- NULL
 ```
 
-## Conclusion
+## 1.3. Conclusion
 
 ```{r}
 head(comp_prog)
@@ -157,58 +159,146 @@ dim(comp_prog)
 On obtient 412 programmes au final (avec 352 au départ pour shogun)
 
 
-## Export du fichier actualisé
+
+## 1.4. Export du fichier actualisé
 
 ```{r}
-BUCKET_OUT = "marieguibert2"
-FILE_KEY_OUT_S3 = "202402 - MAJ Référentiels/.....csv"
-
-aws.s3::s3write_using(
-    df,
-    FUN = readr::write_csv,
-    object = FILE_KEY_OUT_S3,
-    bucket = BUCKET_OUT,
-    opts = list("region" = "")
-)
+# BUCKET_OUT = "marieguibert2"
+# FILE_KEY_OUT_S3 = "202402 - MAJ Référentiels/Fichiers traités/programmes_actualises.csv"
+# 
+# aws.s3::s3write_using(
+#     comp_prog,
+#     FUN = write.csv,
+#     object = FILE_KEY_OUT_S3,
+#     bucket = BUCKET_OUT,
+#     opts = list("region" = "")
+# )
 ```
 
-# Domaines fonctionnels
 
-## Importation des données
+# 2. Domaines fonctionnels
+
+## 2.1. Importation des données
+
+### Calculette shogun
+
+```{r}
+FILE_KEY_S3 <- "202402 - MAJ Référentiels/Calculette_Chorus_2024-02-27.xlsx"
+
+shogun_domaines_fonct <- 
+  aws.s3::s3read_using(
+    FUN = readxl::read_excel, 
+    sheet = "07 - Domaines Fonct. (DF)",
+    skip = 8,
+    object = FILE_KEY_S3,
+    bucket = BUCKET,
+    opts = list("region" = "")
+  )
+```
+On renomme les colonnes pour savoir à quels codes les colonnes correspondent
+
+```{r}
+shogun_domaines_fonct <- shogun_domaines_fonct %>% 
+  rename("Code_min" = "Code...1", 
+         "Code_prog" = "Code...3", 
+         "Code" = "Code...5")
+head(shogun_domaines_fonct)
+```
+
+```{r}
+dim(shogun_domaines_fonct)
+```
+
+On a 2983 domaines fonctionnels dans la calculette shogun
+
+### DRFIP
+
+Le fichier a déjà été importé dans la section "Programmes"
+
+- Nous allons récupérer les domaines fonctionnels : les codes contenant un tiret
+- On renomme les colonnes pour avoir les mêmes noms
+
+```{r}
+domaines_fonct <- prog_domaines_fonct %>% 
+  rename("Code" = "Domaine fonctionnel",
+         "Intitulé" = "Texte esp. fcts",
+         "Début" = "Valide à partir du",
+         "Fin" = "Fin de validité") %>% 
+  filter(str_detect(Code, "-"))
+```
+
+```{r}
+head(domaines_fonct)
+```
+
+```{r}
+dim(domaines_fonct)
+```
+
+On a 5310 domaines fonctionnels dans le fichier de la drfip
+
+## 2.2. Comparaison des deux fichiers
+
+On compare d'abord les noms de colonnes pour être sur qu'ils se correspondent bien.
+
+```{r}
+cat("Noms de colonnes shogun : ", paste0(colnames(shogun_domaines_fonct), collapse = "/"))
+cat('\n')
+cat("Noms de colonnes  DRFIP :",paste0(colnames(domaines_fonct), collapse = "/"))
+```
+
+On fusionne les deux fichiers en se basant sur la colonne Code (Code du domaine fonctionnel) 
+
+```{r}
+comp_domaines_fonct <- merge(shogun_domaines_fonct, domaines_fonct, 
+                             by = "Code", 
+                             all.x = T, all.y = T, suffixes = c("_shogun", "_drfip"))
+```
+
+```{r}
+head(comp_domaines_fonct)
+```
 
 
-## Comparaison des deux fichiers
 
 
-## Conclusion
 
 
-## Export du fichier actualisé
-
-# Référentiels de programmation
-
-## Importation des données
+## 2.3. Conclusion
 
 
-## Comparaison des deux fichiers
+```{r}
+dim(comp_domaines_fonct)
+```
+
+## 2.4. Export du fichier actualisé
 
 
-## Conclusion
+
+# 3. Référentiels de programmation
+
+## 3.1. Importation des données
 
 
-## Export du fichier actualisé
+## 3.2. Comparaison des deux fichiers
 
 
-# Centres de coûts
+## 3.3. Conclusion
 
 
-## Importation des données
+## 3.4. Export du fichier actualisé
 
 
-## Comparaison des deux fichiers
+# 4. Centres de coûts
 
 
-## Conclusion
+## 4.1. Importation des données
 
 
-## Export du fichier actualisé
+## 4.2. Comparaison des deux fichiers
+
+
+## 4.3. Conclusion
+
+
+## 4.4. Export du fichier actualisé
