@@ -245,7 +245,8 @@ correspondent
 shogun_domaines_fonct <- shogun_domaines_fonct %>% 
   rename("Code_min" = "Code...1", 
          "Code_prog" = "Code...3", 
-         "Code" = "Code...5")
+         "Code" = "Code...5") %>% 
+  filter(Type != "PRG") # on supprime les programmes
 head(shogun_domaines_fonct)
 ```
 
@@ -253,7 +254,7 @@ head(shogun_domaines_fonct)
 dim(shogun_domaines_fonct)
 ```
 
-On a 2983 domaines fonctionnels dans la calculette shogun
+On a 2794 domaines fonctionnels dans la calculette shogun
 
 ### DRFIP
 
@@ -321,39 +322,40 @@ head(comp_domaines_fonct)
 ```
 
 On fusionne les colonnes Intitulé_drfip avec Intitulé_shogun pour
-obtenir une seule colonne Intitulé
+obtenir une seule colonne **Intitulé**
 
-Règle : - Par défaut on prend l'intitulé de shogun car il est plus
-complet - Si le nom est dupliqué pour l'intitulé shogun alors la
-première fois on prend clui de shogun sinon on prend celui de la drfip -
-Si le nom n'est pas renseigné dans shogun alors on prend celui de la
+Règle : \
+- Par défaut on prend l'intitulé de shogun car il est plus complet \
+- Si le nom est dupliqué pour l'intitulé shogun alors la première fois
+on prend clui de shogun sinon on prend celui de la drfip \
+- Si le nom n'est pas renseigné dans shogun alors on prend celui de la
 DRFIP
 
 ```{r}
 # Identifier les lignes avec des Intitulé_chorus répétées
-duplicated_rows <- duplicated(comp_prog$Intitulé_shogun)
+duplicated_rows <- duplicated(comp_domaines_fonct$Intitulé_shogun)
 
 # Modifier la colonne Intitulé en fonction des conditions
-comp_prog$Intitulé <- ifelse(duplicated_rows, comp_prog$Intitulé_drfip, comp_prog$Intitulé_shogun)
+comp_domaines_fonct$Intitulé <- ifelse(duplicated_rows,
+                                       comp_domaines_fonct$Intitulé_drfip, 
+                                       comp_domaines_fonct$Intitulé_shogun)
 
 # Supprimer les colonnes devenues redondantes si nécessaire
-comp_prog$Intitulé_shogun <- NULL
-comp_prog$Intitulé_drfip <- NULL
-```
-
-```{r}
-# Sélection des lignes où Intitulé_shogun est dupliqué
-resultat <- comp_prog[duplicated(comp_prog$Intitulé_shogun), ]
-
-# Affichage du résultat
-print(resultat)
+comp_domaines_fonct$Intitulé_shogun <- NULL
+comp_domaines_fonct$Intitulé_drfip <- NULL
 ```
 
 ## 2.3. Conclusion
 
 ```{r}
+head(comp_domaines_fonct)
+```
+
+```{r}
 dim(comp_domaines_fonct)
 ```
+
+On obtient 5352 lignes au lieu de 2794 dans la calculette shogun
 
 ## 2.4. Export du fichier actualisé
 
