@@ -245,8 +245,7 @@ correspondent
 shogun_domaines_fonct <- shogun_domaines_fonct %>% 
   rename("Code_min" = "Code...1", 
          "Code_prog" = "Code...3", 
-         "Code" = "Code...5") %>% 
-  filter(Type != "PRG") # on supprime les programmes
+         "Code" = "Code...5")
 head(shogun_domaines_fonct)
 ```
 
@@ -254,7 +253,7 @@ head(shogun_domaines_fonct)
 dim(shogun_domaines_fonct)
 ```
 
-On a 2794 domaines fonctionnels dans la calculette shogun
+On a 2983 domaines fonctionnels dans la calculette shogun
 
 ### DRFIP
 
@@ -355,7 +354,7 @@ head(comp_domaines_fonct)
 dim(comp_domaines_fonct)
 ```
 
-On obtient 5352 lignes au lieu de 2794 dans la calculette shogun
+On obtient 5541 lignes au lieu de 2794 dans la calculette shogun
 
 ## 2.4. Export du fichier actualisé
 
@@ -363,9 +362,165 @@ On obtient 5352 lignes au lieu de 2794 dans la calculette shogun
 
 ## 3.1. Importation des données
 
+
+### Calculette shogun
+
+```{r}
+FILE_KEY_S3 <- "202402 - MAJ Référentiels/Calculette_Chorus_2024-02-27.xlsx"
+
+shogun_ref_prog <- 
+  aws.s3::s3read_using(
+    FUN = readxl::read_excel, 
+    sheet = "08 - Activités (OS,OP,OB,ACT)",
+    skip = 8,
+    object = FILE_KEY_S3,
+    bucket = BUCKET,
+    opts = list("region" = "")
+  )
+```
+
+On renomme les colonnes pour savoir à quels codes les colonnes
+correspondent
+
+```{r}
+shogun_ref_prog <- shogun_ref_prog %>% 
+  rename("Code_min" = "Code...1", 
+         "Code_prog" = "Code...3", 
+         "Code_OS" = "Code...4", 
+         "Intitulé_OS" = "Intitulé...5",
+         "Libellé_OS" = "Libellé...6",
+         "Code_OP" = "Code...7", 
+         "Intitulé_OP" = "Intitulé...8",
+         "Libellé_OP" = "Libellé...9",         
+         "Code_OB" = "Code...10", 
+         "Intitulé_OB" = "Intitulé...11",
+         "Libellé_OB" = "Libellé...12",
+         "Code" = "Code...13", 
+         "Intitulé" = "Intitulé...14",
+         "Libellé" = "Libellé...15") 
+
+head(shogun_ref_prog)
+```
+
+```{r}
+dim(shogun_ref_prog)
+```
+
+On a 13150 référentiels de programmation dans la calculette shogun
+
+### DRFIP
+
+```{r}
+FILE_KEY_S3 <- "202402 - MAJ Référentiels/Fichiers DRFIP/référentiel programmes de financement 2024.ods"
+
+ref_prog <- 
+  aws.s3::s3read_using(
+    FUN = readODS::read_ods, 
+    object = FILE_KEY_S3,
+    bucket = BUCKET,
+    opts = list("region" = "")
+  )
+
+head(ref_prog)
+```
+
+On modifie les noms de colonnes pour avoir les mêmes que dans la calculette
+
+```{r}
+ref_prog <- ref_prog %>% 
+  rename("Code"= "Programme de financement", 
+         "Intitulé"="Désignation",
+         "Libellé"="Description", 
+         "Début"="Valide à partir du", 
+         "Fin" = "Fin de validité") %>% 
+  select(-`Destination /  Action`) # colonne non incluse dans la calculette
+```
+
+
+
+```{r}
+dim(ref_prog)
+```
+
+On a 36360 référentiels de programmation dans le fichier de la drfip
+
 ## 3.2. Comparaison des deux fichiers
 
+On compare d'abord les noms de colonnes pour être sur qu'ils se
+correspondent bien.
+
+```{r}
+cat("Noms de colonnes shogun : ", paste0(colnames(shogun_ref_prog), collapse = "/"))
+cat('\n')
+cat("Noms de colonnes  DRFIP :",paste0(colnames(ref_prog), collapse = "/"))
+```
+
+On fusionne les deux fichiers en se basant sur la colonne Code (Code du
+domaine fonctionnel)
+
+```{r}
+comp_ref_prog <- merge(shogun_ref_prog, ref_prog, 
+                             by = "Code", 
+                             all.x = T, all.y = T, 
+                             suffixes = c("_shogun", "_drfip"))
+```
+
+```{r}
+head(comp_ref_prog)
+```
+
+Modification des dates :
+
+-   On ne garde pas la date de début de shogun car elle contient moins
+    d'historique que celle de la drfip
+-   On ne garde pas la date de fin de la drfip car elle est moins
+    souvent actualisée
+
+```{r}
+comp_ref_prog <- comp_ref_prog %>% 
+  select(-Début_shogun,  # suppression des colonnes
+         -Fin_drfip) %>% 
+  rename("Début" = "Début_drfip" ,  # renommage pour correspondre au fichier attendu
+         "Fin" = "Fin_shogun")
+
+head(comp_ref_prog)
+```
+
+On fusionne les colonnes Intitulé_drfip avec Intitulé_shogun pour
+obtenir une seule colonne **Intitulé** et de même pour les colonnes libellé
+
+Règle : \
+- Par défaut on prend l'intitulé de shogun car les deux sont très proches et les caractères spéciaux sont reconnus dans shogun
+
+```{r}
+
+comp_ref_prog$Intitulé <- comp_ref_prog$Intitulé_shogun
+
+# Supprimer les colonnes devenues redondantes 
+comp_ref_prog$Intitulé_shogun <- NULL
+comp_ref_prog$Intitulé_drfip <- NULL
+```
+
+```{r}
+comp_ref_prog$Libellé <- comp_ref_prog$Intitulé_shogun
+
+# Supprimer les colonnes devenues redondantes 
+comp_ref_prog$Libellé_shogun <- NULL
+comp_ref_prog$Libellé_drfip <- NULL
+```
+
 ## 3.3. Conclusion
+
+```{r}
+head(comp_ref_prog)
+```
+
+```{r}
+dim(comp_ref_prog)
+```
+
+On a à présent 36 380 référentiels de programmation alors que nous en avions seulement 13150
+
 
 ## 3.4. Export du fichier actualisé
 
