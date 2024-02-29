@@ -127,7 +127,7 @@ comp_prog <- comp_prog %>%
 head(comp_prog)
 ```
 
-On fusionne les colonnes Initulé_drfip avec Intitulé_shogun pour obtenir une seule colonne Intitulé
+On fusionne les colonnes Intitulé_drfip avec Intitulé_shogun pour obtenir une seule colonne Intitulé
 
 Règle : 
 - Par défaut on prend l'intitulé de shogun car il est plus complet
@@ -252,17 +252,43 @@ On fusionne les deux fichiers en se basant sur la colonne Code (Code du domaine 
 ```{r}
 comp_domaines_fonct <- merge(shogun_domaines_fonct, domaines_fonct, 
                              by = "Code", 
-                             all.x = T, all.y = T, suffixes = c("_shogun", "_drfip"))
+                             all.x = T, all.y = T, 
+                             suffixes = c("_shogun", "_drfip"))
 ```
 
+Modification des dates :
+
+- On ne garde pas la date de début de shogun car elle contient moins d'historique que celle de la drfip
+- On ne garde pas la date de fin de la drfip car elle est moins souvent actualisée
+
 ```{r}
+comp_domaines_fonct <- comp_domaines_fonct %>% 
+  select(-Début_shogun,  # suppression des colonnes
+         -Fin_drfip) %>% 
+  rename("Début" = "Début_drfip" ,  # renommage pour correspondre au fichier attendu
+         "Fin" = "Fin_shogun")
+
 head(comp_domaines_fonct)
 ```
 
+On fusionne les colonnes Intitulé_drfip avec Intitulé_shogun pour obtenir une seule colonne Intitulé
 
+Règle : 
+- Par défaut on prend l'intitulé de shogun car il est plus complet
+- Si le nom est dupliqué pour l'intitulé shogun alors la première fois on prend clui de shogun sinon on prend celui de la drfip
+- Si le nom n'est pas renseigné dans shogun alors on prend celui de la DRFIP 
 
+```{r}
+# Identifier les lignes avec des Intitulé_chorus répétées
+duplicated_rows <- duplicated(comp_prog$Intitulé_shogun)
 
+# Modifier la colonne Intitulé en fonction des conditions
+comp_prog$Intitulé <- ifelse(duplicated_rows, comp_prog$Intitulé_drfip, comp_prog$Intitulé_shogun)
 
+# Supprimer les colonnes devenues redondantes si nécessaire
+comp_prog$Intitulé_shogun <- NULL
+comp_prog$Intitulé_drfip <- NULL
+```
 
 ## 2.3. Conclusion
 
