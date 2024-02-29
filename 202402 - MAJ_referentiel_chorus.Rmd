@@ -205,18 +205,35 @@ départ
 
 ## 1.4. Export du fichier actualisé
 
+
 ```{r}
-# BUCKET_OUT = "marieguibert2"
-# FILE_KEY_OUT_S3 = "202402 - MAJ Référentiels/Fichiers traités/programmes_actualises.csv"
+# FILE_KEY_OUT_S3 <- "202402 - MAJ Référentiels/Fichiers traités/programmes_actualises.csv"
+# BUCKET_OUT <- "marieguibert2"
 # 
 # aws.s3::s3write_using(
 #     comp_prog,
-#     FUN = write.csv,
+#     FUN = readr::write_csv,
 #     object = FILE_KEY_OUT_S3,
 #     bucket = BUCKET_OUT,
 #     opts = list("region" = "")
 # )
 ```
+
+
+
+```{r}
+library(aws.s3)
+
+
+
+put_object(file, 
+    object = FILE_KEY_S3,
+    bucket = BUCKET,
+    opts = list("region" = "")  
+)
+
+```
+
 
 # 2. Domaines fonctionnels
 
@@ -520,7 +537,6 @@ dim(comp_ref_prog)
 ```
 
 On a à présent 36 380 référentiels de programmation alors que nous en avions seulement 13150
-
 
 ## 3.4. Export du fichier actualisé
 
