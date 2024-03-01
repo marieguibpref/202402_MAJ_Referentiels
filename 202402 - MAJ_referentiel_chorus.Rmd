@@ -555,6 +555,85 @@ aws.s3::s3write_using(
 
 ## 4.1. Importation des données
 
+### Calculette shogun
+
+```{r}
+BUCKET <- "marieguibert2"
+FILE_KEY_S3 <- "202402 - MAJ Référentiels/Calculette_Chorus_2024-02-27.xlsx"
+
+shogun_centres_couts <- 
+  aws.s3::s3read_using(
+    FUN = readxl::read_excel, 
+    sheet = "09 - Centres de coûts (CCOU)",
+    skip = 8,
+    object = FILE_KEY_S3,
+    bucket = BUCKET,
+    opts = list("region" = "")
+  )
+
+head(shogun_centres_couts)
+```
+
+On renomme pour avoir des noms de colonnes compréhensibles
+
+```{r}
+shogun_centres_couts <- shogun_centres_couts %>% 
+  rename("Code_min" = "Code...1",
+         "Code" = "Code...5")
+```
+
+
+```{r}
+dim(shogun_centres_couts)
+```
+
+On a 19678 centres de coûts dans la calculette shogun
+
+
+### DRFIP
+
+```{r}
+FILE_KEY_S3 <- "202402 - MAJ Référentiels/Fichiers DRFIP/référentiel centres de coûts 2024.ods"
+
+centres_couts <- 
+  aws.s3::s3read_using(
+    FUN = readODS::read_ods, 
+    object = FILE_KEY_S3,
+    bucket = BUCKET,
+    opts = list("region" = "")
+  )
+
+head(centres_couts)
+```
+
+On retravaille le fichier pour :
+
+\- avoir les mêmes colonnes que dans la calculette shogun
+
+\- renommer les colonnes pour avoir les mêmes noms
+
+
+```{r}
+centres_couts <- centres_couts %>% 
+  select(1:2) %>% 
+  rename("Code"="Centre de coûts", 
+         "Intitulé" = "Description")
+head(centres_couts)
+```
+
+```{r}
+dim(centres_couts)
+```
+
+Suite à ces traitements, on obtient 20210 centres de coûts pour le fichier de la
+DRFIP
+
+On remarque cependant un problème : on a des doublons (voir ci-dessous) : on décide de garder seulement la première ligne lorsque le code est duppliqué
+
+```{r}
+length(unique(centres_couts$Code))
+```
+
 ## 4.2. Comparaison des deux fichiers
 
 ## 4.3. Conclusion
