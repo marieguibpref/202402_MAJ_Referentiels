@@ -5,7 +5,63 @@ date: "2024-02-27"
 output: html_document
 ---
 
+# Comparaison avec l'année 2019
+
+## Programmes
+
+### Importation des données
+
 ```{r}
-# prog <- 
+BUCKET <- "marieguibert2"
+FILE_KEY_S3 <- "202402-MAJ_Referentiels/Fichiers_traites/programmes_actualises.csv"
+
+prog <- 
+  aws.s3::s3read_using(
+    FUN = readr::read_delim,
+    show_col_types = FALSE,
+    object = FILE_KEY_S3,
+    bucket = BUCKET,
+    opts = list("region" = "")
+  )
+
+head(prog, 10)
+```
+
+```{r}
+FILE_KEY_S3 <- "202402-MAJ_Referentiels/Historique/xlsxCalculette_Chorus_2019-12-01.xlsx"
+
+prog2019 <- 
+  aws.s3::s3read_using(
+    FUN = readxl::read_excel,
+    sheet = "03 - Programmes",
+    skip = 8,
+    object = FILE_KEY_S3,
+    bucket = BUCKET,
+    opts = list("region" = "")
+  )
+
+head(prog2019, 10)
+```
+
+### Analyse des référentiels
+
+On analyse si notre référentiel est complet par rapport à 2019
+
+```{r}
+length(intersect(prog2019$`Code Programme`, prog$`Code Programme`)) # Nombre de programmes en commun
+length(setdiff(prog2019$`Code Programme`, prog$`Code Programme`)) # Nombre de programmes différents
+```
+
+```{r}
+length(intersect(prog2019$Intitulé, prog$Intitulé)) # Nombre de programmes en commun
+length(setdiff(prog2019$Intitulé, prog$Intitulé)) # Nombre de programmes différents
+```
+
+
+
+Il nous manque 13 programmes dans notre référentiel, que nous allons ajouter
+
+```{r}
+
 ```
 
