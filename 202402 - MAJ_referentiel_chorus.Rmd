@@ -716,7 +716,7 @@ On réorganise le tableau pour avoir les colonnes dans le même ordre que la cal
 
 ```{r}
 comp_centres_couts <- comp_centres_couts %>% 
-  select(2:4, Code, Intitulé, 6:10)
+  select(2:4, `Code département`, Code, Intitulé, 6:10)
 head(comp_centres_couts)
 ```
 
