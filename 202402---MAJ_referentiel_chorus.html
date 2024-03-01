@@ -360,17 +360,32 @@ display: none;
 <p>Ce document a pour but de mettre à jour les référentiels extraits de
 la calculette shogun grâce aux fichiers déposés sur Resana par la
 DRFIP.</p>
-<div id="programmes" class="section level1">
-<h1>Programmes</h1>
-<div id="importation-des-données" class="section level2">
-<h2>Importation des données</h2>
-<div id="calculette-shogun" class="section level3">
-<h3>Calculette shogun</h3>
+<div id="environnement-de-travail" class="section level1">
+<h1>Environnement de travail</h1>
 <pre class="r"><code>library(aws.s3)
 #install.packages(&quot;readxl&quot;)
 library(readxl)
-
-BUCKET &lt;- &quot;marieguibert2&quot;
+#install.packages(&quot;readODS&quot;)
+library(readODS)
+library(dplyr)</code></pre>
+<pre><code>## 
+## Attaching package: &#39;dplyr&#39;</code></pre>
+<pre><code>## The following objects are masked from &#39;package:stats&#39;:
+## 
+##     filter, lag</code></pre>
+<pre><code>## The following objects are masked from &#39;package:base&#39;:
+## 
+##     intersect, setdiff, setequal, union</code></pre>
+<pre class="r"><code>library(stringr)
+library(dplyr)</code></pre>
+</div>
+<div id="programmes" class="section level1">
+<h1>1. Programmes</h1>
+<div id="importation-des-données" class="section level2">
+<h2>1.1. Importation des données</h2>
+<div id="calculette-shogun" class="section level3">
+<h3>Calculette shogun</h3>
+<pre class="r"><code>BUCKET &lt;- &quot;marieguibert2&quot;
 FILE_KEY_S3 &lt;- &quot;202402 - MAJ Référentiels/Calculette_Chorus_2024-02-27.xlsx&quot;
 
 shogun_prog &lt;- 
@@ -398,13 +413,17 @@ head(shogun_prog)</code></pre>
 <pre><code>## [1] 352   8</code></pre>
 <p>On dispose de 352 programmes pour la calculette de shogun en date du
 27/02/2024</p>
+<p>On remarque un “problème” :</p>
+<pre class="r"><code>length(unique(shogun_prog$`Code Programme`))</code></pre>
+<pre><code>## [1] 352</code></pre>
+<pre class="r"><code>length(unique(shogun_prog$Intitulé))</code></pre>
+<pre><code>## [1] 222</code></pre>
+<p>On a bien 352 id différents mais seulement 222 intitulés
+différents</p>
 </div>
 <div id="drfip" class="section level3">
 <h3>DRFIP</h3>
-<pre class="r"><code>#install.packages(&quot;readODS&quot;)
-library(readODS)
-
-FILE_KEY_S3 &lt;- &quot;202402 - MAJ Référentiels/Fichiers DRFIP/référentiel domaines fonctionnels 2024.ods&quot;
+<pre class="r"><code>FILE_KEY_S3 &lt;- &quot;202402 - MAJ Référentiels/Fichiers DRFIP/référentiel domaines fonctionnels 2024.ods&quot;
 
 prog_domaines_fonct &lt;- 
   aws.s3::s3read_using(
@@ -424,22 +443,12 @@ head(prog_domaines_fonct)</code></pre>
 ## 4 0101-01-04            AJ - droit plaid… 01/01/2008           31/12/2014       
 ## 5 0101-01-05            AJ-avoués-avoc C… 01/01/2008           31/12/2014       
 ## 6 0101-01-06            AJ - huissiers    01/01/2008           31/12/2014</code></pre>
-<p>On retravaille le fichier pour : - avoir les mêmes colonnes que dans
-la calculette shogun - renommer les colonnes pour avoir les mêmes noms -
-garder les lignes où le code est de longueur 4 pour n’avoir que les
+<p>On retravaille le fichier pour :</p>
+<p>- avoir les mêmes colonnes que dans la calculette shogun</p>
+<p>- renommer les colonnes pour avoir les mêmes noms</p>
+<p>- garder les lignes où le code est de longueur 4 pour n’avoir que les
 programmes</p>
-<pre class="r"><code>library(dplyr)</code></pre>
-<pre><code>## 
-## Attaching package: &#39;dplyr&#39;</code></pre>
-<pre><code>## The following objects are masked from &#39;package:stats&#39;:
-## 
-##     filter, lag</code></pre>
-<pre><code>## The following objects are masked from &#39;package:base&#39;:
-## 
-##     intersect, setdiff, setequal, union</code></pre>
-<pre class="r"><code>library(stringr)
-
-prog &lt;- prog_domaines_fonct %&gt;% 
+<pre class="r"><code>prog &lt;- prog_domaines_fonct %&gt;% 
   rename(&quot;Code Programme&quot; = &quot;Domaine fonctionnel&quot;,
          &quot;Intitulé&quot; = &quot;Texte esp. fcts&quot;,
          &quot;Date validité Début&quot; = &quot;Valide à partir du&quot;,
@@ -460,10 +469,14 @@ head(prog)</code></pre>
 <pre><code>## [1] 370   4</code></pre>
 <p>Suite à ces traitements, on obtient 370 programmes pour le fichier de
 la DRFIP</p>
+<pre class="r"><code>length(unique(prog$Intitulé))</code></pre>
+<pre><code>## [1] 345</code></pre>
+<p>On a 345 noms de programmes différents, cela va nous permettre de
+compléter ceux qui se trouvent dans la calculette shogun</p>
 </div>
 </div>
 <div id="comparaison-des-deux-fichiers" class="section level2">
-<h2>Comparaison des deux fichiers</h2>
+<h2>1.2. Comparaison des deux fichiers</h2>
 <p>On compare d’abord les noms de colonnes pour être sur qu’ils se
 correspondent bien.</p>
 <pre class="r"><code>cat(&quot;Noms de colonnes shogun : &quot;, paste0(colnames(shogun_prog), collapse = &quot;/&quot;))</code></pre>
@@ -472,10 +485,14 @@ correspondent bien.</p>
 <pre class="r"><code>cat(&quot;Noms de colonnes  DRFIP :&quot;,paste0(colnames(prog), collapse = &quot;/&quot;))</code></pre>
 <pre><code>## Noms de colonnes  DRFIP : Code Programme/Intitulé/Date validité Début/Date validité Fin</code></pre>
 <p>On réalise une jointure pour récupérer les programmes de shogun et
-ceux de la drfip - On se base sur le code du programme pour la fusion -
-On conserve toutes les lignes du fichier shogun et toutes les lignes du
-fichier de la drfip - Pour voir quel Intitulé de programme garder, on
-ajoute des suffixes</p>
+ceux de la drfip</p>
+<ul>
+<li><p>On se base sur le code du programme pour la fusion</p></li>
+<li><p>On conserve toutes les lignes du fichier shogun et toutes les
+lignes du fichier de la drfip</p></li>
+<li><p>Pour voir quel Intitulé de programme garder, on ajoute des
+suffixes</p></li>
+</ul>
 <pre class="r"><code>comp_prog &lt;- merge(shogun_prog, prog, 
                    by = c(&quot;Code Programme&quot;), 
                    all.x = T, all.y = T, 
@@ -515,16 +532,16 @@ head(comp_prog)</code></pre>
 ## 4        31/12/9999   NA   &lt;NA&gt;   Intégr&amp;accNationalFranç          01/01/2008
 ## 5        31/12/9999   NA   &lt;NA&gt;  ActionFranceEurope_Monde          01/01/2008
 ## 6        31/12/3014   NA   &lt;NA&gt;  ActionsFavFamVulnérables          01/01/2008</code></pre>
-<p>On fusionne les colonnes Initulé_drfip avec Intitulé_shogun pour
-obtenir une seule colonne Intitulé</p>
-<p>Règle : - Par défaut on prend l’intitulé de shogun car il est plus
-complet - Si le nom est dupliqué pour l’intitulé shogun alors la
-première fois on prend clui de shogun sinon on prend celui de la drfip -
-Si le nom n’est pas renseigné dans shogun alors on prend celui de la
+<p>On fusionne les colonnes Intitulé_drfip avec Intitulé_shogun pour
+obtenir une seule colonne <strong>Intitulé</strong></p>
+<p>Règle :</p>
+<p>- Par défaut on prend l’intitulé de shogun car il est plus
+complet<br />
+- Si le nom est dupliqué pour l’intitulé shogun alors la première fois
+on prend clui de shogun sinon on prend celui de la drfip<br />
+- Si le nom n’est pas renseigné dans shogun alors on prend celui de la
 DRFIP</p>
-<pre class="r"><code>library(dplyr)
-
-# Identifier les lignes avec des Intitulé_chorus répétées
+<pre class="r"><code># Identifier les lignes avec des Intitulé_chorus répétées
 duplicated_rows &lt;- duplicated(comp_prog$Intitulé_shogun)
 
 # Modifier la colonne Intitulé en fonction des conditions
@@ -535,7 +552,7 @@ comp_prog$Intitulé_shogun &lt;- NULL
 comp_prog$Intitulé_drfip &lt;- NULL</code></pre>
 </div>
 <div id="conclusion" class="section level2">
-<h2>Conclusion</h2>
+<h2>1.3. Conclusion</h2>
 <pre class="r"><code>head(comp_prog)</code></pre>
 <pre><code>##   Code Programme  Code Sigle Date validité Fin Cree Expiré Date validité Début
 ## 1           0101 MIN10 MINJU        31/12/9999   NA   &lt;NA&gt;          01/01/2008
@@ -555,64 +572,531 @@ comp_prog$Intitulé_drfip &lt;- NULL</code></pre>
 <pre><code>## [1] 412   8</code></pre>
 <p>On obtient 412 programmes au final (avec 352 au départ pour
 shogun)</p>
+<pre class="r"><code>length(unique(comp_prog$Intitulé))</code></pre>
+<pre><code>## [1] 348</code></pre>
+<p>On obtient 348 noms différents, ce qui parait cohérent par rapport au
+départ</p>
 </div>
 <div id="export-du-fichier-actualisé" class="section level2">
-<h2>Export du fichier actualisé</h2>
-<pre class="r"><code># BUCKET_OUT = &quot;marieguibert2&quot;
-# FILE_KEY_OUT_S3 = &quot;202402 - MAJ Référentiels/Fichiers traités/programmes_actualises.csv&quot;
-# 
-# aws.s3::s3write_using(
-#     comp_prog,
-#     FUN = write.csv,
-#     object = FILE_KEY_OUT_S3,
-#     bucket = BUCKET_OUT,
-#     opts = list(&quot;region&quot; = &quot;&quot;)
-# )</code></pre>
+<h2>1.4. Export du fichier actualisé</h2>
+<pre class="r"><code>FILE_KEY_OUT_S3 &lt;- &quot;202402-MAJ_Referentiels/Fichiers_traites/programmes_actualises.csv&quot;
+BUCKET_OUT &lt;- &quot;marieguibert2&quot;
+
+aws.s3::s3write_using(
+    comp_prog,
+    FUN = readr::write_csv,
+    col_names = FALSE, 
+    object = FILE_KEY_OUT_S3,
+    bucket = BUCKET_OUT,
+    opts = list(&quot;region&quot; = &quot;&quot;)
+)</code></pre>
 </div>
 </div>
 <div id="domaines-fonctionnels" class="section level1">
-<h1>Domaines fonctionnels</h1>
+<h1>2. Domaines fonctionnels</h1>
 <div id="importation-des-données-1" class="section level2">
-<h2>Importation des données</h2>
+<h2>2.1. Importation des données</h2>
+<div id="calculette-shogun-1" class="section level3">
+<h3>Calculette shogun</h3>
+<pre class="r"><code>FILE_KEY_S3 &lt;- &quot;202402 - MAJ Référentiels/Calculette_Chorus_2024-02-27.xlsx&quot;
+
+shogun_domaines_fonct &lt;- 
+  aws.s3::s3read_using(
+    FUN = readxl::read_excel, 
+    sheet = &quot;07 - Domaines Fonct. (DF)&quot;,
+    skip = 8,
+    object = FILE_KEY_S3,
+    bucket = BUCKET,
+    opts = list(&quot;region&quot; = &quot;&quot;)
+  )</code></pre>
+<pre><code>## New names:
+## • `Code` -&gt; `Code...1`
+## • `Code` -&gt; `Code...3`
+## • `Code` -&gt; `Code...5`</code></pre>
+<p>On renomme les colonnes pour savoir à quels codes les colonnes
+correspondent</p>
+<pre class="r"><code>shogun_domaines_fonct &lt;- shogun_domaines_fonct %&gt;% 
+  rename(&quot;Code_min&quot; = &quot;Code...1&quot;, 
+         &quot;Code_prog&quot; = &quot;Code...3&quot;, 
+         &quot;Code&quot; = &quot;Code...5&quot;)
+head(shogun_domaines_fonct)</code></pre>
+<pre><code>## # A tibble: 6 × 14
+##   Code_min Sigle Code_prog Type    Code    Intitulé  Libellé `Imputable ?` Début
+##   &lt;chr&gt;    &lt;chr&gt; &lt;chr&gt;     &lt;chr&gt;   &lt;chr&gt;   &lt;chr&gt;     &lt;chr&gt;   &lt;chr&gt;         &lt;chr&gt;
+## 1 MIN10    MINJU 0101      PRG     0101    &lt;NA&gt;      AccèsD… &lt;NA&gt;          01/0…
+## 2 MIN10    MINJU 0101      PRG/ACT 0101-01 Aide jur… Aide j… &lt;NA&gt;          01/0…
+## 3 MIN10    MINJU 0101      PRG/ACT 0101-02 Accès au… Dévelo… &lt;NA&gt;          01/0…
+## 4 MIN10    MINJU 0101      PRG/ACT 0101-03 Aide aux… Aide a… &lt;NA&gt;          01/0…
+## 5 MIN10    MINJU 0101      PRG/ACT 0101-04 MFER      Médiat… &lt;NA&gt;          01/0…
+## 6 MIN10    MINJU 0101      PRG/ACT 0101-05 Indemnis… Indemn… &lt;NA&gt;          01/0…
+## # ℹ 5 more variables: Fin &lt;chr&gt;, `Créé cette année` &lt;chr&gt;, Expiré &lt;chr&gt;,
+## #   `DF(s) Cible(s) pour l&#39;année : 2024` &lt;lgl&gt;, `Missions parlementaires` &lt;chr&gt;</code></pre>
+<pre class="r"><code>dim(shogun_domaines_fonct)</code></pre>
+<pre><code>## [1] 2983   14</code></pre>
+<p>On a 2983 domaines fonctionnels dans la calculette shogun</p>
+</div>
+<div id="drfip-1" class="section level3">
+<h3>DRFIP</h3>
+<p>Le fichier a déjà été importé dans la section “Programmes”</p>
+<ul>
+<li>Nous allons récupérer les domaines fonctionnels : les codes
+contenant un tiret</li>
+<li>On renomme les colonnes pour avoir les mêmes noms</li>
+</ul>
+<pre class="r"><code>domaines_fonct &lt;- prog_domaines_fonct %&gt;% 
+  rename(&quot;Code&quot; = &quot;Domaine fonctionnel&quot;,
+         &quot;Intitulé&quot; = &quot;Texte esp. fcts&quot;,
+         &quot;Début&quot; = &quot;Valide à partir du&quot;,
+         &quot;Fin&quot; = &quot;Fin de validité&quot;) %&gt;% 
+  filter(str_detect(Code, &quot;-&quot;))</code></pre>
+<pre class="r"><code>head(domaines_fonct)</code></pre>
+<pre><code>## # A tibble: 6 × 4
+##   Code       Intitulé                 Début      Fin       
+##   &lt;chr&gt;      &lt;chr&gt;                    &lt;chr&gt;      &lt;chr&gt;     
+## 1 0101-01    Aide juridictionnelle    01/01/2008 31/12/9999
+## 2 0101-01-03 Aide à l&#39;intervention en 01/01/2008 31/12/2021
+## 3 0101-01-04 AJ - droit plaidoirie    01/01/2008 31/12/2014
+## 4 0101-01-05 AJ-avoués-avoc CE CC     01/01/2008 31/12/2014
+## 5 0101-01-06 AJ - huissiers           01/01/2008 31/12/2014
+## 6 0101-01-07 AJ - experts             01/01/2008 31/12/2014</code></pre>
+<pre class="r"><code>dim(domaines_fonct)</code></pre>
+<pre><code>## [1] 5310    4</code></pre>
+<p>On a 5310 domaines fonctionnels dans le fichier de la drfip</p>
+</div>
 </div>
 <div id="comparaison-des-deux-fichiers-1" class="section level2">
-<h2>Comparaison des deux fichiers</h2>
+<h2>2.2. Comparaison des deux fichiers</h2>
+<p>On compare d’abord les noms de colonnes pour être sur qu’ils se
+correspondent bien.</p>
+<pre class="r"><code>cat(&quot;Noms de colonnes shogun : &quot;, paste0(colnames(shogun_domaines_fonct), collapse = &quot;/&quot;))</code></pre>
+<pre><code>## Noms de colonnes shogun :  Code_min/Sigle/Code_prog/Type/Code/Intitulé/Libellé/Imputable ?/Début/Fin/Créé cette année/Expiré/DF(s) Cible(s) pour l&#39;année : 2024/Missions parlementaires</code></pre>
+<pre class="r"><code>cat(&#39;\n&#39;)</code></pre>
+<pre class="r"><code>cat(&quot;Noms de colonnes  DRFIP :&quot;,paste0(colnames(domaines_fonct), collapse = &quot;/&quot;))</code></pre>
+<pre><code>## Noms de colonnes  DRFIP : Code/Intitulé/Début/Fin</code></pre>
+<p>On fusionne les deux fichiers en se basant sur la colonne Code (Code
+du domaine fonctionnel)</p>
+<pre class="r"><code>comp_domaines_fonct &lt;- merge(shogun_domaines_fonct, domaines_fonct, 
+                             by = &quot;Code&quot;, 
+                             all.x = T, all.y = T, 
+                             suffixes = c(&quot;_shogun&quot;, &quot;_drfip&quot;))</code></pre>
+<p>Modification des dates :</p>
+<ul>
+<li>On ne garde pas la date de début de shogun car elle contient moins
+d’historique que celle de la drfip</li>
+<li>On ne garde pas la date de fin de la drfip car elle est moins
+souvent actualisée</li>
+</ul>
+<pre class="r"><code>comp_domaines_fonct &lt;- comp_domaines_fonct %&gt;% 
+  select(-Début_shogun,  # suppression des colonnes
+         -Fin_drfip) %&gt;% 
+  rename(&quot;Début&quot; = &quot;Début_drfip&quot; ,  # renommage pour correspondre au fichier attendu
+         &quot;Fin&quot; = &quot;Fin_shogun&quot;)
+
+head(comp_domaines_fonct)</code></pre>
+<pre><code>##         Code Code_min Sigle Code_prog    Type       Intitulé_shogun
+## 1       0101    MIN10 MINJU      0101     PRG                  &lt;NA&gt;
+## 2    0101-01    MIN10 MINJU      0101 PRG/ACT Aide juridictionnelle
+## 3 0101-01-03     &lt;NA&gt;  &lt;NA&gt;      &lt;NA&gt;    &lt;NA&gt;                  &lt;NA&gt;
+## 4 0101-01-04     &lt;NA&gt;  &lt;NA&gt;      &lt;NA&gt;    &lt;NA&gt;                  &lt;NA&gt;
+## 5 0101-01-05     &lt;NA&gt;  &lt;NA&gt;      &lt;NA&gt;    &lt;NA&gt;                  &lt;NA&gt;
+## 6 0101-01-06     &lt;NA&gt;  &lt;NA&gt;      &lt;NA&gt;    &lt;NA&gt;                  &lt;NA&gt;
+##                 Libellé Imputable ?        Fin Créé cette année Expiré
+## 1     AccèsDroitJustice        &lt;NA&gt; 31/12/9999             &lt;NA&gt;   &lt;NA&gt;
+## 2 Aide juridictionnelle        &lt;NA&gt; 31/12/9999             &lt;NA&gt;   &lt;NA&gt;
+## 3                  &lt;NA&gt;        &lt;NA&gt;       &lt;NA&gt;             &lt;NA&gt;   &lt;NA&gt;
+## 4                  &lt;NA&gt;        &lt;NA&gt;       &lt;NA&gt;             &lt;NA&gt;   &lt;NA&gt;
+## 5                  &lt;NA&gt;        &lt;NA&gt;       &lt;NA&gt;             &lt;NA&gt;   &lt;NA&gt;
+## 6                  &lt;NA&gt;        &lt;NA&gt;       &lt;NA&gt;             &lt;NA&gt;   &lt;NA&gt;
+##   DF(s) Cible(s) pour l&#39;année : 2024 Missions parlementaires
+## 1                                 NA                    &lt;NA&gt;
+## 2                                 NA             MJA Justice
+## 3                                 NA                    &lt;NA&gt;
+## 4                                 NA                    &lt;NA&gt;
+## 5                                 NA                    &lt;NA&gt;
+## 6                                 NA                    &lt;NA&gt;
+##             Intitulé_drfip      Début
+## 1                     &lt;NA&gt;       &lt;NA&gt;
+## 2    Aide juridictionnelle 01/01/2008
+## 3 Aide à l&#39;intervention en 01/01/2008
+## 4    AJ - droit plaidoirie 01/01/2008
+## 5     AJ-avoués-avoc CE CC 01/01/2008
+## 6           AJ - huissiers 01/01/2008</code></pre>
+<p>On fusionne les colonnes Intitulé_drfip avec Intitulé_shogun pour
+obtenir une seule colonne <strong>Intitulé</strong></p>
+<p>Règle :<br />
+- Par défaut on prend l’intitulé de shogun car il est plus complet<br />
+- Si le nom est dupliqué pour l’intitulé shogun alors la première fois
+on prend clui de shogun sinon on prend celui de la drfip<br />
+- Si le nom n’est pas renseigné dans shogun alors on prend celui de la
+DRFIP</p>
+<pre class="r"><code># Identifier les lignes avec des Intitulé_chorus répétées
+duplicated_rows &lt;- duplicated(comp_domaines_fonct$Intitulé_shogun)
+
+# Modifier la colonne Intitulé en fonction des conditions
+comp_domaines_fonct$Intitulé &lt;- ifelse(duplicated_rows,
+                                       comp_domaines_fonct$Intitulé_drfip, 
+                                       comp_domaines_fonct$Intitulé_shogun)
+
+# Supprimer les colonnes devenues redondantes si nécessaire
+comp_domaines_fonct$Intitulé_shogun &lt;- NULL
+comp_domaines_fonct$Intitulé_drfip &lt;- NULL</code></pre>
 </div>
 <div id="conclusion-1" class="section level2">
-<h2>Conclusion</h2>
+<h2>2.3. Conclusion</h2>
+<pre class="r"><code>head(comp_domaines_fonct)</code></pre>
+<pre><code>##         Code Code_min Sigle Code_prog    Type               Libellé Imputable ?
+## 1       0101    MIN10 MINJU      0101     PRG     AccèsDroitJustice        &lt;NA&gt;
+## 2    0101-01    MIN10 MINJU      0101 PRG/ACT Aide juridictionnelle        &lt;NA&gt;
+## 3 0101-01-03     &lt;NA&gt;  &lt;NA&gt;      &lt;NA&gt;    &lt;NA&gt;                  &lt;NA&gt;        &lt;NA&gt;
+## 4 0101-01-04     &lt;NA&gt;  &lt;NA&gt;      &lt;NA&gt;    &lt;NA&gt;                  &lt;NA&gt;        &lt;NA&gt;
+## 5 0101-01-05     &lt;NA&gt;  &lt;NA&gt;      &lt;NA&gt;    &lt;NA&gt;                  &lt;NA&gt;        &lt;NA&gt;
+## 6 0101-01-06     &lt;NA&gt;  &lt;NA&gt;      &lt;NA&gt;    &lt;NA&gt;                  &lt;NA&gt;        &lt;NA&gt;
+##          Fin Créé cette année Expiré DF(s) Cible(s) pour l&#39;année : 2024
+## 1 31/12/9999             &lt;NA&gt;   &lt;NA&gt;                                 NA
+## 2 31/12/9999             &lt;NA&gt;   &lt;NA&gt;                                 NA
+## 3       &lt;NA&gt;             &lt;NA&gt;   &lt;NA&gt;                                 NA
+## 4       &lt;NA&gt;             &lt;NA&gt;   &lt;NA&gt;                                 NA
+## 5       &lt;NA&gt;             &lt;NA&gt;   &lt;NA&gt;                                 NA
+## 6       &lt;NA&gt;             &lt;NA&gt;   &lt;NA&gt;                                 NA
+##   Missions parlementaires      Début                 Intitulé
+## 1                    &lt;NA&gt;       &lt;NA&gt;                     &lt;NA&gt;
+## 2             MJA Justice 01/01/2008    Aide juridictionnelle
+## 3                    &lt;NA&gt; 01/01/2008 Aide à l&#39;intervention en
+## 4                    &lt;NA&gt; 01/01/2008    AJ - droit plaidoirie
+## 5                    &lt;NA&gt; 01/01/2008     AJ-avoués-avoc CE CC
+## 6                    &lt;NA&gt; 01/01/2008           AJ - huissiers</code></pre>
+<pre class="r"><code>dim(comp_domaines_fonct)</code></pre>
+<pre><code>## [1] 5541   14</code></pre>
+<p>On obtient 5541 lignes au lieu de 2794 dans la calculette shogun</p>
 </div>
 <div id="export-du-fichier-actualisé-1" class="section level2">
-<h2>Export du fichier actualisé</h2>
+<h2>2.4. Export du fichier actualisé</h2>
+<pre class="r"><code>FILE_KEY_OUT_S3 &lt;- &quot;202402-MAJ_Referentiels/Fichiers_traites/programmes_actualises.csv&quot;
+BUCKET_OUT &lt;- &quot;marieguibert2&quot;
+
+aws.s3::s3write_using(
+    comp_prog,
+    FUN = readr::write_csv,
+    col_names = FALSE, 
+    object = FILE_KEY_OUT_S3,
+    bucket = BUCKET_OUT,
+    opts = list(&quot;region&quot; = &quot;&quot;)
+)</code></pre>
 </div>
 </div>
 <div id="référentiels-de-programmation" class="section level1">
-<h1>Référentiels de programmation</h1>
+<h1>3. Référentiels de programmation</h1>
 <div id="importation-des-données-2" class="section level2">
-<h2>Importation des données</h2>
+<h2>3.1. Importation des données</h2>
+<div id="calculette-shogun-2" class="section level3">
+<h3>Calculette shogun</h3>
+<pre class="r"><code>FILE_KEY_S3 &lt;- &quot;202402 - MAJ Référentiels/Calculette_Chorus_2024-02-27.xlsx&quot;
+
+shogun_ref_prog &lt;- 
+  aws.s3::s3read_using(
+    FUN = readxl::read_excel, 
+    sheet = &quot;08 - Activités (OS,OP,OB,ACT)&quot;,
+    skip = 8,
+    object = FILE_KEY_S3,
+    bucket = BUCKET,
+    opts = list(&quot;region&quot; = &quot;&quot;)
+  )</code></pre>
+<pre><code>## New names:
+## • `Code` -&gt; `Code...1`
+## • `Code` -&gt; `Code...3`
+## • `Code` -&gt; `Code...4`
+## • `Intitulé` -&gt; `Intitulé...5`
+## • `Libellé` -&gt; `Libellé...6`
+## • `Code` -&gt; `Code...7`
+## • `Intitulé` -&gt; `Intitulé...8`
+## • `Libellé` -&gt; `Libellé...9`
+## • `Code` -&gt; `Code...10`
+## • `Intitulé` -&gt; `Intitulé...11`
+## • `Libellé` -&gt; `Libellé...12`
+## • `Code` -&gt; `Code...13`
+## • `Intitulé` -&gt; `Intitulé...14`
+## • `Libellé` -&gt; `Libellé...15`</code></pre>
+<p>On renomme les colonnes pour savoir à quels codes les colonnes
+correspondent</p>
+<pre class="r"><code>shogun_ref_prog &lt;- shogun_ref_prog %&gt;% 
+  rename(&quot;Code_min&quot; = &quot;Code...1&quot;, 
+         &quot;Code_prog&quot; = &quot;Code...3&quot;, 
+         &quot;Code_OS&quot; = &quot;Code...4&quot;, 
+         &quot;Intitulé_OS&quot; = &quot;Intitulé...5&quot;,
+         &quot;Libellé_OS&quot; = &quot;Libellé...6&quot;,
+         &quot;Code_OP&quot; = &quot;Code...7&quot;, 
+         &quot;Intitulé_OP&quot; = &quot;Intitulé...8&quot;,
+         &quot;Libellé_OP&quot; = &quot;Libellé...9&quot;,         
+         &quot;Code_OB&quot; = &quot;Code...10&quot;, 
+         &quot;Intitulé_OB&quot; = &quot;Intitulé...11&quot;,
+         &quot;Libellé_OB&quot; = &quot;Libellé...12&quot;,
+         &quot;Code&quot; = &quot;Code...13&quot;, 
+         &quot;Intitulé&quot; = &quot;Intitulé...14&quot;,
+         &quot;Libellé&quot; = &quot;Libellé...15&quot;) 
+
+head(shogun_ref_prog)</code></pre>
+<pre><code>## # A tibble: 6 × 23
+##   Code_min Sigle Code_prog Code_OS Intitulé_OS Libellé_OS Code_OP  Intitulé_OP  
+##   &lt;chr&gt;    &lt;chr&gt; &lt;chr&gt;     &lt;chr&gt;   &lt;chr&gt;       &lt;chr&gt;      &lt;chr&gt;    &lt;chr&gt;        
+## 1 MIN10    MINJU 0101      010101  SADJAV      SADJAV     01010101 Aid juridict…
+## 2 MIN10    MINJU 0101      010101  SADJAV      SADJAV     01010101 Aid juridict…
+## 3 MIN10    MINJU 0101      010101  SADJAV      SADJAV     01010101 Aid juridict…
+## 4 MIN10    MINJU 0101      010101  SADJAV      SADJAV     01010101 Aid juridict…
+## 5 MIN10    MINJU 0101      010101  SADJAV      SADJAV     01010101 Aid juridict…
+## 6 MIN10    MINJU 0101      010101  SADJAV      SADJAV     01010101 Aid juridict…
+## # ℹ 15 more variables: Libellé_OP &lt;chr&gt;, Code_OB &lt;chr&gt;, Intitulé_OB &lt;chr&gt;,
+## #   Libellé_OB &lt;chr&gt;, Code &lt;chr&gt;, Intitulé &lt;chr&gt;, Libellé &lt;chr&gt;,
+## #   `Domaine fonc. associé` &lt;chr&gt;, `Recette ou Dépense` &lt;chr&gt;, Début &lt;chr&gt;,
+## #   Expiration &lt;chr&gt;, Fin &lt;chr&gt;, `Créé cette année` &lt;chr&gt;, Expiré &lt;chr&gt;,
+## #   `Activité(s) Cible(s) pour l&#39;année : 2024` &lt;lgl&gt;</code></pre>
+<pre class="r"><code>dim(shogun_ref_prog)</code></pre>
+<pre><code>## [1] 13150    23</code></pre>
+<p>On a 13150 référentiels de programmation dans la calculette
+shogun</p>
+</div>
+<div id="drfip-2" class="section level3">
+<h3>DRFIP</h3>
+<pre class="r"><code>FILE_KEY_S3 &lt;- &quot;202402 - MAJ Référentiels/Fichiers DRFIP/référentiel programmes de financement 2024.ods&quot;
+
+ref_prog &lt;- 
+  aws.s3::s3read_using(
+    FUN = readODS::read_ods, 
+    object = FILE_KEY_S3,
+    bucket = BUCKET,
+    opts = list(&quot;region&quot; = &quot;&quot;)
+  )
+
+head(ref_prog)</code></pre>
+<pre><code>## # A tibble: 6 × 6
+##   `Programme de financement` Désignation        Description `Valide à partir du`
+##   &lt;chr&gt;                      &lt;chr&gt;              &lt;chr&gt;       &lt;chr&gt;               
+## 1 00154130009                Plan relance Mod … Plan relan… 01/01/2013          
+## 2 010101                     SADJAV             SADJAV      01/01/2010          
+## 3 01010101                   Aid juridictionne… A Aide jur… 01/01/2010          
+## 4 0101010101                 Avocats-autres AJ  A1 - Dot b… 01/01/2010          
+## 5 010101010101               DOT JUR ET NON JUR DOTATIONS … 01/01/2010          
+## 6 010101010102               R#trib auxiliaires r#tribuer … 01/01/2010          
+## # ℹ 2 more variables: `Fin de validité` &lt;chr&gt;, `Destination /  Action` &lt;chr&gt;</code></pre>
+<p>On modifie les noms de colonnes pour avoir les mêmes que dans la
+calculette</p>
+<pre class="r"><code>ref_prog &lt;- ref_prog %&gt;% 
+  rename(&quot;Code&quot;= &quot;Programme de financement&quot;, 
+         &quot;Intitulé&quot;=&quot;Désignation&quot;,
+         &quot;Libellé&quot;=&quot;Description&quot;, 
+         &quot;Début&quot;=&quot;Valide à partir du&quot;, 
+         &quot;Fin&quot; = &quot;Fin de validité&quot;) %&gt;% 
+  select(-`Destination /  Action`) # colonne non incluse dans la calculette</code></pre>
+<pre class="r"><code>dim(ref_prog)</code></pre>
+<pre><code>## [1] 36360     5</code></pre>
+<p>On a 36360 référentiels de programmation dans le fichier de la
+drfip</p>
+</div>
 </div>
 <div id="comparaison-des-deux-fichiers-2" class="section level2">
-<h2>Comparaison des deux fichiers</h2>
+<h2>3.2. Comparaison des deux fichiers</h2>
+<p>On compare d’abord les noms de colonnes pour être sur qu’ils se
+correspondent bien.</p>
+<pre class="r"><code>cat(&quot;Noms de colonnes shogun : &quot;, paste0(colnames(shogun_ref_prog), collapse = &quot;/&quot;))</code></pre>
+<pre><code>## Noms de colonnes shogun :  Code_min/Sigle/Code_prog/Code_OS/Intitulé_OS/Libellé_OS/Code_OP/Intitulé_OP/Libellé_OP/Code_OB/Intitulé_OB/Libellé_OB/Code/Intitulé/Libellé/Domaine fonc. associé/Recette ou Dépense/Début/Expiration/Fin/Créé cette année/Expiré/Activité(s) Cible(s) pour l&#39;année : 2024</code></pre>
+<pre class="r"><code>cat(&#39;\n&#39;)</code></pre>
+<pre class="r"><code>cat(&quot;Noms de colonnes  DRFIP :&quot;,paste0(colnames(ref_prog), collapse = &quot;/&quot;))</code></pre>
+<pre><code>## Noms de colonnes  DRFIP : Code/Intitulé/Libellé/Début/Fin</code></pre>
+<p>On fusionne les deux fichiers en se basant sur la colonne Code (Code
+du domaine fonctionnel)</p>
+<pre class="r"><code>comp_ref_prog &lt;- merge(shogun_ref_prog, ref_prog, 
+                             by = &quot;Code&quot;, 
+                             all.x = T, all.y = T, 
+                             suffixes = c(&quot;_shogun&quot;, &quot;_drfip&quot;))</code></pre>
+<pre class="r"><code>head(comp_ref_prog)</code></pre>
+<pre><code>##           Code Code_min Sigle Code_prog Code_OS Intitulé_OS Libellé_OS  Code_OP
+## 1  00154130009     &lt;NA&gt;  &lt;NA&gt;      &lt;NA&gt;    &lt;NA&gt;        &lt;NA&gt;       &lt;NA&gt;     &lt;NA&gt;
+## 2       010101     &lt;NA&gt;  &lt;NA&gt;      &lt;NA&gt;    &lt;NA&gt;        &lt;NA&gt;       &lt;NA&gt;     &lt;NA&gt;
+## 3     01010101     &lt;NA&gt;  &lt;NA&gt;      &lt;NA&gt;    &lt;NA&gt;        &lt;NA&gt;       &lt;NA&gt;     &lt;NA&gt;
+## 4   0101010101     &lt;NA&gt;  &lt;NA&gt;      &lt;NA&gt;    &lt;NA&gt;        &lt;NA&gt;       &lt;NA&gt;     &lt;NA&gt;
+## 5 010101010101    MIN10 MINJU      0101  010101      SADJAV     SADJAV 01010101
+## 6 010101010102     &lt;NA&gt;  &lt;NA&gt;      &lt;NA&gt;    &lt;NA&gt;        &lt;NA&gt;       &lt;NA&gt;     &lt;NA&gt;
+##            Intitulé_OP              Libellé_OP    Code_OB       Intitulé_OB
+## 1                 &lt;NA&gt;                    &lt;NA&gt;       &lt;NA&gt;              &lt;NA&gt;
+## 2                 &lt;NA&gt;                    &lt;NA&gt;       &lt;NA&gt;              &lt;NA&gt;
+## 3                 &lt;NA&gt;                    &lt;NA&gt;       &lt;NA&gt;              &lt;NA&gt;
+## 4                 &lt;NA&gt;                    &lt;NA&gt;       &lt;NA&gt;              &lt;NA&gt;
+## 5 Aid juridictionnelle A Aide juridictionnelle 0101010101 Avocats-autres AJ
+## 6                 &lt;NA&gt;                    &lt;NA&gt;       &lt;NA&gt;              &lt;NA&gt;
+##                                       Libellé_OB    Intitulé_shogun
+## 1                                           &lt;NA&gt;               &lt;NA&gt;
+## 2                                           &lt;NA&gt;               &lt;NA&gt;
+## 3                                           &lt;NA&gt;               &lt;NA&gt;
+## 4                                           &lt;NA&gt;               &lt;NA&gt;
+## 5 A1 - Dot barreaux-auxiliaires-environnement AJ DOT JUR ET NON JUR
+## 6                                           &lt;NA&gt;               &lt;NA&gt;
+##                               Libellé_shogun Domaine fonc. associé
+## 1                                       &lt;NA&gt;                  &lt;NA&gt;
+## 2                                       &lt;NA&gt;                  &lt;NA&gt;
+## 3                                       &lt;NA&gt;                  &lt;NA&gt;
+## 4                                       &lt;NA&gt;                  &lt;NA&gt;
+## 5 DOTATIONS CARPA AJ ET AUTRES INTERVENTIONS               0101-01
+## 6                                       &lt;NA&gt;                  &lt;NA&gt;
+##   Recette ou Dépense Début_shogun Expiration Fin_shogun Créé cette année Expiré
+## 1               &lt;NA&gt;         &lt;NA&gt;       &lt;NA&gt;       &lt;NA&gt;             &lt;NA&gt;   &lt;NA&gt;
+## 2               &lt;NA&gt;         &lt;NA&gt;       &lt;NA&gt;       &lt;NA&gt;             &lt;NA&gt;   &lt;NA&gt;
+## 3               &lt;NA&gt;         &lt;NA&gt;       &lt;NA&gt;       &lt;NA&gt;             &lt;NA&gt;   &lt;NA&gt;
+## 4               &lt;NA&gt;         &lt;NA&gt;       &lt;NA&gt;       &lt;NA&gt;             &lt;NA&gt;   &lt;NA&gt;
+## 5                  D   01/01/2010       &lt;NA&gt; 31/12/9999             &lt;NA&gt;   &lt;NA&gt;
+## 6               &lt;NA&gt;         &lt;NA&gt;       &lt;NA&gt;       &lt;NA&gt;             &lt;NA&gt;   &lt;NA&gt;
+##   Activité(s) Cible(s) pour l&#39;année : 2024       Intitulé_drfip
+## 1                                       NA Plan relance Mod exp
+## 2                                       NA               SADJAV
+## 3                                       NA Aid juridictionnelle
+## 4                                       NA    Avocats-autres AJ
+## 5                                       NA   DOT JUR ET NON JUR
+## 6                                       NA   R#trib auxiliaires
+##                                    Libellé_drfip Début_drfip  Fin_drfip
+## 1                           Plan relance Mod exp  01/01/2013 31/12/2014
+## 2                                         SADJAV  01/01/2010 31/12/9999
+## 3                        A Aide juridictionnelle  01/01/2010 31/12/9999
+## 4 A1 - Dot barreaux-auxiliaires-environnement AJ  01/01/2010 31/12/9999
+## 5     DOTATIONS CARPA AJ ET AUTRES INTERVENTIONS  01/01/2010 31/12/9999
+## 6          r#tribuer auxil. justice  missions AJ  01/01/2010 21/11/2012</code></pre>
+<p>Modification des dates :</p>
+<ul>
+<li>On ne garde pas la date de début de shogun car elle contient moins
+d’historique que celle de la drfip</li>
+<li>On ne garde pas la date de fin de la drfip car elle est moins
+souvent actualisée</li>
+</ul>
+<pre class="r"><code>comp_ref_prog &lt;- comp_ref_prog %&gt;% 
+  select(-Début_shogun,  # suppression des colonnes
+         -Fin_drfip) %&gt;% 
+  rename(&quot;Début&quot; = &quot;Début_drfip&quot; ,  # renommage pour correspondre au fichier attendu
+         &quot;Fin&quot; = &quot;Fin_shogun&quot;)
+
+head(comp_ref_prog)</code></pre>
+<pre><code>##           Code Code_min Sigle Code_prog Code_OS Intitulé_OS Libellé_OS  Code_OP
+## 1  00154130009     &lt;NA&gt;  &lt;NA&gt;      &lt;NA&gt;    &lt;NA&gt;        &lt;NA&gt;       &lt;NA&gt;     &lt;NA&gt;
+## 2       010101     &lt;NA&gt;  &lt;NA&gt;      &lt;NA&gt;    &lt;NA&gt;        &lt;NA&gt;       &lt;NA&gt;     &lt;NA&gt;
+## 3     01010101     &lt;NA&gt;  &lt;NA&gt;      &lt;NA&gt;    &lt;NA&gt;        &lt;NA&gt;       &lt;NA&gt;     &lt;NA&gt;
+## 4   0101010101     &lt;NA&gt;  &lt;NA&gt;      &lt;NA&gt;    &lt;NA&gt;        &lt;NA&gt;       &lt;NA&gt;     &lt;NA&gt;
+## 5 010101010101    MIN10 MINJU      0101  010101      SADJAV     SADJAV 01010101
+## 6 010101010102     &lt;NA&gt;  &lt;NA&gt;      &lt;NA&gt;    &lt;NA&gt;        &lt;NA&gt;       &lt;NA&gt;     &lt;NA&gt;
+##            Intitulé_OP              Libellé_OP    Code_OB       Intitulé_OB
+## 1                 &lt;NA&gt;                    &lt;NA&gt;       &lt;NA&gt;              &lt;NA&gt;
+## 2                 &lt;NA&gt;                    &lt;NA&gt;       &lt;NA&gt;              &lt;NA&gt;
+## 3                 &lt;NA&gt;                    &lt;NA&gt;       &lt;NA&gt;              &lt;NA&gt;
+## 4                 &lt;NA&gt;                    &lt;NA&gt;       &lt;NA&gt;              &lt;NA&gt;
+## 5 Aid juridictionnelle A Aide juridictionnelle 0101010101 Avocats-autres AJ
+## 6                 &lt;NA&gt;                    &lt;NA&gt;       &lt;NA&gt;              &lt;NA&gt;
+##                                       Libellé_OB    Intitulé_shogun
+## 1                                           &lt;NA&gt;               &lt;NA&gt;
+## 2                                           &lt;NA&gt;               &lt;NA&gt;
+## 3                                           &lt;NA&gt;               &lt;NA&gt;
+## 4                                           &lt;NA&gt;               &lt;NA&gt;
+## 5 A1 - Dot barreaux-auxiliaires-environnement AJ DOT JUR ET NON JUR
+## 6                                           &lt;NA&gt;               &lt;NA&gt;
+##                               Libellé_shogun Domaine fonc. associé
+## 1                                       &lt;NA&gt;                  &lt;NA&gt;
+## 2                                       &lt;NA&gt;                  &lt;NA&gt;
+## 3                                       &lt;NA&gt;                  &lt;NA&gt;
+## 4                                       &lt;NA&gt;                  &lt;NA&gt;
+## 5 DOTATIONS CARPA AJ ET AUTRES INTERVENTIONS               0101-01
+## 6                                       &lt;NA&gt;                  &lt;NA&gt;
+##   Recette ou Dépense Expiration        Fin Créé cette année Expiré
+## 1               &lt;NA&gt;       &lt;NA&gt;       &lt;NA&gt;             &lt;NA&gt;   &lt;NA&gt;
+## 2               &lt;NA&gt;       &lt;NA&gt;       &lt;NA&gt;             &lt;NA&gt;   &lt;NA&gt;
+## 3               &lt;NA&gt;       &lt;NA&gt;       &lt;NA&gt;             &lt;NA&gt;   &lt;NA&gt;
+## 4               &lt;NA&gt;       &lt;NA&gt;       &lt;NA&gt;             &lt;NA&gt;   &lt;NA&gt;
+## 5                  D       &lt;NA&gt; 31/12/9999             &lt;NA&gt;   &lt;NA&gt;
+## 6               &lt;NA&gt;       &lt;NA&gt;       &lt;NA&gt;             &lt;NA&gt;   &lt;NA&gt;
+##   Activité(s) Cible(s) pour l&#39;année : 2024       Intitulé_drfip
+## 1                                       NA Plan relance Mod exp
+## 2                                       NA               SADJAV
+## 3                                       NA Aid juridictionnelle
+## 4                                       NA    Avocats-autres AJ
+## 5                                       NA   DOT JUR ET NON JUR
+## 6                                       NA   R#trib auxiliaires
+##                                    Libellé_drfip      Début
+## 1                           Plan relance Mod exp 01/01/2013
+## 2                                         SADJAV 01/01/2010
+## 3                        A Aide juridictionnelle 01/01/2010
+## 4 A1 - Dot barreaux-auxiliaires-environnement AJ 01/01/2010
+## 5     DOTATIONS CARPA AJ ET AUTRES INTERVENTIONS 01/01/2010
+## 6          r#tribuer auxil. justice  missions AJ 01/01/2010</code></pre>
+<p>On fusionne les colonnes Intitulé_drfip avec Intitulé_shogun pour
+obtenir une seule colonne <strong>Intitulé</strong> et de même pour les
+colonnes libellé</p>
+<p>Règle :<br />
+- Par défaut on prend l’intitulé de shogun car les deux sont très
+proches et les caractères spéciaux sont reconnus dans shogun</p>
+<pre class="r"><code>comp_ref_prog$Intitulé &lt;- comp_ref_prog$Intitulé_shogun
+
+# Supprimer les colonnes devenues redondantes 
+comp_ref_prog$Intitulé_shogun &lt;- NULL
+comp_ref_prog$Intitulé_drfip &lt;- NULL</code></pre>
+<pre class="r"><code>comp_ref_prog$Libellé &lt;- comp_ref_prog$Intitulé_shogun
+
+# Supprimer les colonnes devenues redondantes 
+comp_ref_prog$Libellé_shogun &lt;- NULL
+comp_ref_prog$Libellé_drfip &lt;- NULL</code></pre>
 </div>
 <div id="conclusion-2" class="section level2">
-<h2>Conclusion</h2>
+<h2>3.3. Conclusion</h2>
+<pre class="r"><code>head(comp_ref_prog)</code></pre>
+<pre><code>##           Code Code_min Sigle Code_prog Code_OS Intitulé_OS Libellé_OS  Code_OP
+## 1  00154130009     &lt;NA&gt;  &lt;NA&gt;      &lt;NA&gt;    &lt;NA&gt;        &lt;NA&gt;       &lt;NA&gt;     &lt;NA&gt;
+## 2       010101     &lt;NA&gt;  &lt;NA&gt;      &lt;NA&gt;    &lt;NA&gt;        &lt;NA&gt;       &lt;NA&gt;     &lt;NA&gt;
+## 3     01010101     &lt;NA&gt;  &lt;NA&gt;      &lt;NA&gt;    &lt;NA&gt;        &lt;NA&gt;       &lt;NA&gt;     &lt;NA&gt;
+## 4   0101010101     &lt;NA&gt;  &lt;NA&gt;      &lt;NA&gt;    &lt;NA&gt;        &lt;NA&gt;       &lt;NA&gt;     &lt;NA&gt;
+## 5 010101010101    MIN10 MINJU      0101  010101      SADJAV     SADJAV 01010101
+## 6 010101010102     &lt;NA&gt;  &lt;NA&gt;      &lt;NA&gt;    &lt;NA&gt;        &lt;NA&gt;       &lt;NA&gt;     &lt;NA&gt;
+##            Intitulé_OP              Libellé_OP    Code_OB       Intitulé_OB
+## 1                 &lt;NA&gt;                    &lt;NA&gt;       &lt;NA&gt;              &lt;NA&gt;
+## 2                 &lt;NA&gt;                    &lt;NA&gt;       &lt;NA&gt;              &lt;NA&gt;
+## 3                 &lt;NA&gt;                    &lt;NA&gt;       &lt;NA&gt;              &lt;NA&gt;
+## 4                 &lt;NA&gt;                    &lt;NA&gt;       &lt;NA&gt;              &lt;NA&gt;
+## 5 Aid juridictionnelle A Aide juridictionnelle 0101010101 Avocats-autres AJ
+## 6                 &lt;NA&gt;                    &lt;NA&gt;       &lt;NA&gt;              &lt;NA&gt;
+##                                       Libellé_OB Domaine fonc. associé
+## 1                                           &lt;NA&gt;                  &lt;NA&gt;
+## 2                                           &lt;NA&gt;                  &lt;NA&gt;
+## 3                                           &lt;NA&gt;                  &lt;NA&gt;
+## 4                                           &lt;NA&gt;                  &lt;NA&gt;
+## 5 A1 - Dot barreaux-auxiliaires-environnement AJ               0101-01
+## 6                                           &lt;NA&gt;                  &lt;NA&gt;
+##   Recette ou Dépense Expiration        Fin Créé cette année Expiré
+## 1               &lt;NA&gt;       &lt;NA&gt;       &lt;NA&gt;             &lt;NA&gt;   &lt;NA&gt;
+## 2               &lt;NA&gt;       &lt;NA&gt;       &lt;NA&gt;             &lt;NA&gt;   &lt;NA&gt;
+## 3               &lt;NA&gt;       &lt;NA&gt;       &lt;NA&gt;             &lt;NA&gt;   &lt;NA&gt;
+## 4               &lt;NA&gt;       &lt;NA&gt;       &lt;NA&gt;             &lt;NA&gt;   &lt;NA&gt;
+## 5                  D       &lt;NA&gt; 31/12/9999             &lt;NA&gt;   &lt;NA&gt;
+## 6               &lt;NA&gt;       &lt;NA&gt;       &lt;NA&gt;             &lt;NA&gt;   &lt;NA&gt;
+##   Activité(s) Cible(s) pour l&#39;année : 2024      Début           Intitulé
+## 1                                       NA 01/01/2013               &lt;NA&gt;
+## 2                                       NA 01/01/2010               &lt;NA&gt;
+## 3                                       NA 01/01/2010               &lt;NA&gt;
+## 4                                       NA 01/01/2010               &lt;NA&gt;
+## 5                                       NA 01/01/2010 DOT JUR ET NON JUR
+## 6                                       NA 01/01/2010               &lt;NA&gt;</code></pre>
+<pre class="r"><code>dim(comp_ref_prog)</code></pre>
+<pre><code>## [1] 36380    22</code></pre>
+<p>On a à présent 36 380 référentiels de programmation alors que nous en
+avions seulement 13150</p>
 </div>
 <div id="export-du-fichier-actualisé-2" class="section level2">
-<h2>Export du fichier actualisé</h2>
+<h2>3.4. Export du fichier actualisé</h2>
 </div>
 </div>
 <div id="centres-de-coûts" class="section level1">
-<h1>Centres de coûts</h1>
+<h1>4. Centres de coûts</h1>
 <div id="importation-des-données-3" class="section level2">
-<h2>Importation des données</h2>
+<h2>4.1. Importation des données</h2>
 </div>
 <div id="comparaison-des-deux-fichiers-3" class="section level2">
-<h2>Comparaison des deux fichiers</h2>
+<h2>4.2. Comparaison des deux fichiers</h2>
 </div>
 <div id="conclusion-3" class="section level2">
-<h2>Conclusion</h2>
+<h2>4.3. Conclusion</h2>
 </div>
 <div id="export-du-fichier-actualisé-3" class="section level2">
-<h2>Export du fichier actualisé</h2>
+<h2>4.4. Export du fichier actualisé</h2>
 </div>
 </div>
 

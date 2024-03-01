@@ -166,9 +166,9 @@ obtenir une seule colonne **Intitulé**
 
 Règle :
 
-\- Par défaut on prend l'intitulé de shogun car il est plus complet \
+\- Par défaut on prend l'intitulé de shogun car il est plus complet\
 - Si le nom est dupliqué pour l'intitulé shogun alors la première fois
-on prend clui de shogun sinon on prend celui de la drfip \
+on prend clui de shogun sinon on prend celui de la drfip\
 - Si le nom n'est pas renseigné dans shogun alors on prend celui de la
 DRFIP
 
@@ -205,35 +205,18 @@ départ
 
 ## 1.4. Export du fichier actualisé
 
-
 ```{r}
-# FILE_KEY_OUT_S3 <- "202402 - MAJ Référentiels/Fichiers traités/programmes_actualises.csv"
-# BUCKET_OUT <- "marieguibert2"
-# 
-# aws.s3::s3write_using(
-#     comp_prog,
-#     FUN = readr::write_csv,
-#     object = FILE_KEY_OUT_S3,
-#     bucket = BUCKET_OUT,
-#     opts = list("region" = "")
-# )
-```
+FILE_KEY_OUT_S3 <- "202402-MAJ_Referentiels/Fichiers_traites/programmes_actualises.csv"
+BUCKET_OUT <- "marieguibert2"
 
-
-
-```{r}
-library(aws.s3)
-
-
-
-put_object(file, 
-    object = FILE_KEY_S3,
-    bucket = BUCKET,
-    opts = list("region" = "")  
+aws.s3::s3write_using(
+    comp_prog,
+    FUN = readr::write_csv, 
+    object = FILE_KEY_OUT_S3,
+    bucket = BUCKET_OUT,
+    opts = list("region" = "")
 )
-
 ```
-
 
 # 2. Domaines fonctionnels
 
@@ -340,10 +323,10 @@ head(comp_domaines_fonct)
 On fusionne les colonnes Intitulé_drfip avec Intitulé_shogun pour
 obtenir une seule colonne **Intitulé**
 
-Règle : \
-- Par défaut on prend l'intitulé de shogun car il est plus complet \
+Règle :\
+- Par défaut on prend l'intitulé de shogun car il est plus complet\
 - Si le nom est dupliqué pour l'intitulé shogun alors la première fois
-on prend clui de shogun sinon on prend celui de la drfip \
+on prend clui de shogun sinon on prend celui de la drfip\
 - Si le nom n'est pas renseigné dans shogun alors on prend celui de la
 DRFIP
 
@@ -375,10 +358,22 @@ On obtient 5541 lignes au lieu de 2794 dans la calculette shogun
 
 ## 2.4. Export du fichier actualisé
 
+```{r}
+FILE_KEY_OUT_S3 <- "202402-MAJ_Referentiels/Fichiers_traites/domaines_fonctionnels_actualises.csv"
+BUCKET_OUT <- "marieguibert2"
+
+aws.s3::s3write_using(
+    comp_domaines_fonct,
+    FUN = readr::write_csv, 
+    object = FILE_KEY_OUT_S3,
+    bucket = BUCKET_OUT,
+    opts = list("region" = "")
+)
+```
+
 # 3. Référentiels de programmation
 
 ## 3.1. Importation des données
-
 
 ### Calculette shogun
 
@@ -441,7 +436,8 @@ ref_prog <-
 head(ref_prog)
 ```
 
-On modifie les noms de colonnes pour avoir les mêmes que dans la calculette
+On modifie les noms de colonnes pour avoir les mêmes que dans la
+calculette
 
 ```{r}
 ref_prog <- ref_prog %>% 
@@ -452,8 +448,6 @@ ref_prog <- ref_prog %>%
          "Fin" = "Fin de validité") %>% 
   select(-`Destination /  Action`) # colonne non incluse dans la calculette
 ```
-
-
 
 ```{r}
 dim(ref_prog)
@@ -504,10 +498,12 @@ head(comp_ref_prog)
 ```
 
 On fusionne les colonnes Intitulé_drfip avec Intitulé_shogun pour
-obtenir une seule colonne **Intitulé** et de même pour les colonnes libellé
+obtenir une seule colonne **Intitulé** et de même pour les colonnes
+libellé
 
-Règle : \
-- Par défaut on prend l'intitulé de shogun car les deux sont très proches et les caractères spéciaux sont reconnus dans shogun
+Règle :\
+- Par défaut on prend l'intitulé de shogun car les deux sont très
+proches et les caractères spéciaux sont reconnus dans shogun
 
 ```{r}
 
@@ -536,9 +532,24 @@ head(comp_ref_prog)
 dim(comp_ref_prog)
 ```
 
-On a à présent 36 380 référentiels de programmation alors que nous en avions seulement 13150
+On a à présent 36 380 référentiels de programmation alors que nous en
+avions seulement 13150
 
 ## 3.4. Export du fichier actualisé
+
+```{r}
+FILE_KEY_OUT_S3 <- "202402-MAJ_Referentiels/Fichiers_traites/ref_prog_actualises.csv"
+BUCKET_OUT <- "marieguibert2"
+
+aws.s3::s3write_using(
+    comp_ref_prog,
+    FUN = readr::write_csv, 
+    object = FILE_KEY_OUT_S3,
+    bucket = BUCKET_OUT,
+    opts = list("region" = "")
+)
+```
+
 
 # 4. Centres de coûts
 
