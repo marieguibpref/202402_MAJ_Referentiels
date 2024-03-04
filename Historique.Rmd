@@ -11,18 +11,27 @@ output: html_document
 
 ### Importation des données
 
-```{r}
+On importe d'abord les données de la calculette actualisée
+
+```{r warning = FALSE}
 BUCKET <- "marieguibert2"
-FILE_KEY_S3 <- "202402-MAJ_Referentiels/Fichiers_traites/programmes_actualises.csv"
+FILE_KEY_S3 <- "202402-MAJ_Referentiels/Fichiers_traites/Calculette_Chorus_2024-02-07_actualisee.xlsx"
 
 prog <- 
   aws.s3::s3read_using(
-    FUN = readr::read_delim,
-    show_col_types = FALSE,
+    FUN = readxl::read_excel,
+    sheet = "03 - Programmes",
+    skip = 8,
+    col_types = c("text", "text", "text", "text", "date", "date", "text", "text"),
     object = FILE_KEY_S3,
     bucket = BUCKET,
     opts = list("region" = "")
   )
+
+
+
+prog$`Date validité Début` <- format(prog$`Date validité Début`, "%d-%m-%Y")
+prog$`Date validité Fin` <- format(prog$`Date validité Fin`, "%d-%m-%Y")
 
 head(prog, 10)
 ```
@@ -52,16 +61,59 @@ length(intersect(prog2019$`Code Programme`, prog$`Code Programme`)) # Nombre de 
 length(setdiff(prog2019$`Code Programme`, prog$`Code Programme`)) # Nombre de programmes différents
 ```
 
+On remarque 13 programmes avec des codes différents entre les deux fichiers
+
 ```{r}
 length(intersect(prog2019$Intitulé, prog$Intitulé)) # Nombre de programmes en commun
 length(setdiff(prog2019$Intitulé, prog$Intitulé)) # Nombre de programmes différents
 ```
 
+Cependant, on a 61 intitulés différents. Cela signifie que certains programmes ont été renommés ou complétés : on décide donc de garder les noms les plus récents pour avoir la dénomination la plus à jour possible
+
+### Mise à jour du référentiel        
+
+Pour savoir de quelle année provient chaque programme / nom de programme, on ajoute une colonne année à chaque fichier (pour les graphiques ensuite)
 
 
-Il nous manque 13 programmes dans notre référentiel, que nous allons ajouter
+```{r}
+prog$annee <- "2024"
+head(prog)
+```
+
+```{r}
+prog2019$annee <- "2019"
+head(prog2019)
+```
+
+On fait ensuite une jointure sur le code pour mettre à jour le référentiel 
 
 ```{r}
 
 ```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
