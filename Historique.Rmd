@@ -72,31 +72,66 @@ Cependant, on a 61 intitulés différents. Cela signifie que certains programmes
 
 ### Mise à jour du référentiel        
 
-Pour savoir de quelle année provient chaque programme / nom de programme, on ajoute une colonne année à chaque fichier (pour les graphiques ensuite)
-
+On fait une jointure sur le code programme pour mettre à jour le référentiel des programmes.\
+On conserve bien les informations présentes dans les deux fichiers.
 
 ```{r}
-prog$annee <- "2024"
-head(prog)
+progv1 <- merge(prog, prog2019, by = "Code Programme", suffixes = c("2024", "2019"),
+                all.x = T, all.y = T)
+head(progv1)
 ```
 
 ```{r}
-prog2019$annee <- "2019"
-head(prog2019)
+dim(prog); dim(prog2019); dim(progv1)
 ```
 
-On fait ensuite une jointure sur le code pour mettre à jour le référentiel 
+On remarque qu'on a bien ajouté les 13 programmes manquants
+
+Nous allons maintenant nettoyer notre fichier :
+- Si le nom est renseigné dans Intitulé2024 alors : on conserve cet intitulé + on renseigne 2024 dans la colonne annee + on conserve le code (ministère) et le sigle de 2024
+- Si le nom est pas renseigné : on prend l'intitulé de 2019 + on renseigne 2019 dans la colonne année + on conserve le sigle et le code (ministère) de 2019
 
 ```{r}
+# Si le code 2024 n'est pas renseigné alors je prends celui de 2019
+progv1$Code <- ifelse(is.na(progv1$Code2024),
+                 progv1$Code2019, 
+                 progv1$Code2024)
+```
 
+```{r}
+# Si l'intitulé 2024 n'est pas renseigné alors je prends celui de 2019
+progv1$Intitulé <- ifelse(is.na(progv1$Intitulé2024),
+                 progv1$Intitulé2019, 
+                 progv1$Intitulé2024)
+                               
+```
+
+```{r}
+# Si le sigle 2024 n'est pas renseigné alors je prends celui de 2019
+progv1$Sigle <- ifelse(is.na(progv1$Sigle2024),
+                 progv1$Sigle2019, 
+                 progv1$Sigle2024)
+```
+
+
+```{r}
+# Si on prend l'intitulé de 2024 alors l'année est égale à 2024 sinon 2019
+progv1$annee <- ifelse(progv1$Intitulé == progv1$Intitulé2024 & (progv1$Intitulé2024 != "NA" | !is.na(progv1$Intitulé2024)),
+                       "2024", NA)
+
+# Mettre à jour la variable "annee" en fonction de l'intitulé de 2019
+progv1$annee <- ifelse(is.na(progv1$annee) & progv1$Intitulé == progv1$Intitulé2019 & !is.na(progv1$Intitulé2019) & (progv1$Intitulé2024=="NA" | is.na(progv1$Intitulé2024)),
+                       "2019", progv1$annee)
 ```
 
 
 
-
-
-
-
+```{r}
+library(dplyr)
+progv1 <- progv1 %>% 
+  select(Code, Sigle, `Code Programme`, Intitulé, 5:8, annee)
+head(progv1)
+```
 
 
 
