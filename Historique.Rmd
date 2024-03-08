@@ -5,11 +5,9 @@ date: "2024-02-27"
 output: html_document
 ---
 
-# Comparaison avec l'année 2019
+# Comparaison des programmes 
 
-## Programmes
-
-### Importation des données
+## Année 2022
 
 On importe d'abord les données de la calculette actualisée
 
@@ -27,14 +25,193 @@ prog <-
     bucket = BUCKET,
     opts = list("region" = "")
   )
+```
 
-
-
+```{r}
 prog$`Date validité Début` <- format(prog$`Date validité Début`, "%d-%m-%Y")
 prog$`Date validité Fin` <- format(prog$`Date validité Fin`, "%d-%m-%Y")
 
 head(prog, 10)
 ```
+
+```{r}
+FILE_KEY_S3 <- "202402-MAJ_Referentiels/Historique/xlsxCalculette_Chorus_2022-12-01.xlsx"
+
+prog2022<- 
+  aws.s3::s3read_using(
+    FUN = readxl::read_excel,
+    sheet = "03 - Programmes",
+    skip = 8,
+    object = FILE_KEY_S3,
+    bucket = BUCKET,
+    opts = list("region" = "")
+  )
+
+head(prog2022, 10)
+```
+
+### Analyse des référentiels
+
+On analyse si notre référentiel est complet par rapport à 2019
+
+```{r}
+length(intersect(prog2022$`Code Programme`, prog$`Code Programme`)) # Nombre de programmes en commun
+length(setdiff(prog2022$`Code Programme`, prog$`Code Programme`)) # Nombre de programmes différents
+```
+
+On remarque 13 programmes avec des codes différents entre les deux fichiers
+
+```{r}
+length(intersect(prog2022$Intitulé, prog$Intitulé)) # Nombre de programmes en commun
+length(setdiff(prog2022$Intitulé, prog$Intitulé)) # Nombre de programmes différents
+```
+
+
+Cependant, on a 58 intitulés différents. Cela signifie que certains programmes ont été renommés ou complétés : on décide donc de garder les noms les plus récents pour avoir la dénomination la plus à jour possible
+
+
+### Mise à jour du référentiel        
+
+On fait une jointure sur le code programme pour mettre à jour le référentiel des programmes.\
+On conserve bien les informations présentes dans les deux fichiers.
+
+```{r}
+progv1 <- merge(prog, prog2022, by = "Code Programme", suffixes = c("2024", "2022"),all.y = T, all.x = T)
+head(progv1)
+```
+
+```{r}
+dim(prog); dim(prog2022); dim(progv1)
+```
+
+On remarque qu'on a bien ajouté les 13 programmes manquants
+
+Nous allons maintenant nettoyer notre fichier :
+- Si le nom est renseigné dans Intitulé2024 alors : on conserve cet intitulé + on renseigne 2024 dans la colonne annee + on conserve le code (ministère) et le sigle de 2024
+- Si le nom est pas renseigné : on prend l'intitulé de 2022 + on renseigne 2022 dans la colonne année + on conserve le sigle et le code (ministère) de 2022
+
+```{r}
+# Si le code 2024 n'est pas renseigné alors je prends celui de 2022
+progv1$Code <- ifelse(is.na(progv1$Code2024),
+                 progv1$Code2022, 
+                 progv1$Code2024)
+```
+
+```{r}
+# Si l'intitulé 2024 n'est pas renseigné alors je prends celui de 2022
+progv1$Intitulé <- ifelse(is.na(progv1$Intitulé2024),
+                 progv1$Intitulé2022, 
+                 progv1$Intitulé2024)
+                               
+```
+
+```{r}
+# Si le sigle 2024 n'est pas renseigné alors je prends celui de 2019
+progv1$Sigle <- ifelse(is.na(progv1$Sigle2024),
+                 progv1$Sigle2022, 
+                 progv1$Sigle2024)
+```
+
+
+```{r}
+# Si on prend l'intitulé de 2024 alors l'année est égale à 2024 sinon 2019
+progv1$annee <- ifelse(progv1$Intitulé == progv1$Intitulé2024 & 
+                         (progv1$Intitulé2024 != "NA" | !is.na(progv1$Intitulé2024)),
+                       "2024", NA)
+
+# Mettre à jour la variable "annee" en fonction de l'intitulé de 2019
+progv1$annee <- ifelse(is.na(progv1$annee) & 
+                         progv1$Intitulé == progv1$Intitulé2022 & 
+                         !is.na(progv1$Intitulé2022) & 
+                         (progv1$Intitulé2024=="NA" | is.na(progv1$Intitulé2024)),
+                       "2022", progv1$annee)
+```
+
+
+```{r}
+library(dplyr)
+progv1 <- progv1 %>% 
+  select(Code, Sigle, `Code Programme`, Intitulé, 5:8, annee)
+head(progv1)
+```
+
+## Année 2021
+
+### Importation des données 
+
+Les données de la calculette 2022 sont déjà importées et nous allons à présent nous baser sur le fichier le plus à jour (progv1)
+
+On importe les données de la calculette de 2021
+
+```{r}
+FILE_KEY_S3 <- "202402-MAJ_Referentiels/Historique/xlsxCalculette_Chorus_2021-12-01.xlsx"
+
+prog2021 <- 
+  aws.s3::s3read_using(
+    FUN = readxl::read_excel,
+    sheet = "03 - Programmes",
+    skip = 8,
+    object = FILE_KEY_S3,
+    bucket = BUCKET,
+    opts = list("region" = "")
+  )
+
+head(prog2021, 10)
+```
+
+### Analyse des référentiels
+
+On analyse si notre référentiel est complet par rapport à 2021
+
+```{r}
+length(intersect(prog2021$`Code Programme`, progv1$`Code Programme`)) # Nombre de programmes en commun
+length(setdiff(prog2021$`Code Programme`, progv1$`Code Programme`)) # Nombre de programmes différents
+```
+
+On remarque que le fichier mis à jour contient tous les programmes de 2022 et de 2020.
+
+## Année 2020
+
+### Importation des données 
+
+Les données de la calculette 2022 sont déjà importées et nous allons à présent nous baser sur le fichier le plus à jour (progv1)
+
+On importe les données de la calculette de 2020
+
+```{r}
+FILE_KEY_S3 <- "202402-MAJ_Referentiels/Historique/xlsxCalculette_Chorus_2020-12-01.xlsx"
+
+prog2020 <- 
+  aws.s3::s3read_using(
+    FUN = readxl::read_excel,
+    sheet = "03 - Programmes",
+    skip = 8,
+    object = FILE_KEY_S3,
+    bucket = BUCKET,
+    opts = list("region" = "")
+  )
+
+head(prog2020, 10)
+```
+
+### Analyse des référentiels
+
+On analyse si notre référentiel est complet par rapport à 2020
+
+```{r}
+length(intersect(prog2020$`Code Programme`, progv1$`Code Programme`)) # Nombre de programmes en commun
+length(setdiff(prog2020$`Code Programme`, progv1$`Code Programme`)) # Nombre de programmes différents
+```
+
+On remarque que le fichier mis à jour contient tous les programmes de 2022 et de 2020.
+
+## Année 2019
+
+### Importation des données
+
+Les données de la calculette 2022 sont déjà importées et nous allons à présent nous baser sur le fichier le plus à jour (progv1)
+
+On importe les données de la calculette de 2019
 
 ```{r}
 FILE_KEY_S3 <- "202402-MAJ_Referentiels/Historique/xlsxCalculette_Chorus_2019-12-01.xlsx"
@@ -57,98 +234,23 @@ head(prog2019, 10)
 On analyse si notre référentiel est complet par rapport à 2019
 
 ```{r}
-length(intersect(prog2019$`Code Programme`, prog$`Code Programme`)) # Nombre de programmes en commun
-length(setdiff(prog2019$`Code Programme`, prog$`Code Programme`)) # Nombre de programmes différents
+length(intersect(prog2019$`Code Programme`, progv1$`Code Programme`)) # Nombre de programmes en commun
+length(setdiff(prog2019$`Code Programme`, progv1$`Code Programme`)) # Nombre de programmes différents
 ```
 
-On remarque 13 programmes avec des codes différents entre les deux fichiers
+On remarque que le fichier mis à jour contient tous les programmes de 2022 et de 2019.
+
+# Export du fichier actualisé
 
 ```{r}
-length(intersect(prog2019$Intitulé, prog$Intitulé)) # Nombre de programmes en commun
-length(setdiff(prog2019$Intitulé, prog$Intitulé)) # Nombre de programmes différents
+FILE_KEY_OUT_S3 <- "202402-MAJ_Referentiels/Historique/Prog_actualises"
+BUCKET_OUT <- "marieguibert2"
+
+aws.s3::s3write_using(
+    progv1,
+    FUN = readr::write_csv, 
+    object = FILE_KEY_OUT_S3,
+    bucket = BUCKET_OUT,
+    opts = list("region" = "")
+)
 ```
-
-Cependant, on a 61 intitulés différents. Cela signifie que certains programmes ont été renommés ou complétés : on décide donc de garder les noms les plus récents pour avoir la dénomination la plus à jour possible
-
-### Mise à jour du référentiel        
-
-On fait une jointure sur le code programme pour mettre à jour le référentiel des programmes.\
-On conserve bien les informations présentes dans les deux fichiers.
-
-```{r}
-progv1 <- merge(prog, prog2019, by = "Code Programme", suffixes = c("2024", "2019"),
-                all.x = T, all.y = T)
-head(progv1)
-```
-
-```{r}
-dim(prog); dim(prog2019); dim(progv1)
-```
-
-On remarque qu'on a bien ajouté les 13 programmes manquants
-
-Nous allons maintenant nettoyer notre fichier :
-- Si le nom est renseigné dans Intitulé2024 alors : on conserve cet intitulé + on renseigne 2024 dans la colonne annee + on conserve le code (ministère) et le sigle de 2024
-- Si le nom est pas renseigné : on prend l'intitulé de 2019 + on renseigne 2019 dans la colonne année + on conserve le sigle et le code (ministère) de 2019
-
-```{r}
-# Si le code 2024 n'est pas renseigné alors je prends celui de 2019
-progv1$Code <- ifelse(is.na(progv1$Code2024),
-                 progv1$Code2019, 
-                 progv1$Code2024)
-```
-
-```{r}
-# Si l'intitulé 2024 n'est pas renseigné alors je prends celui de 2019
-progv1$Intitulé <- ifelse(is.na(progv1$Intitulé2024),
-                 progv1$Intitulé2019, 
-                 progv1$Intitulé2024)
-                               
-```
-
-```{r}
-# Si le sigle 2024 n'est pas renseigné alors je prends celui de 2019
-progv1$Sigle <- ifelse(is.na(progv1$Sigle2024),
-                 progv1$Sigle2019, 
-                 progv1$Sigle2024)
-```
-
-
-```{r}
-# Si on prend l'intitulé de 2024 alors l'année est égale à 2024 sinon 2019
-progv1$annee <- ifelse(progv1$Intitulé == progv1$Intitulé2024 & (progv1$Intitulé2024 != "NA" | !is.na(progv1$Intitulé2024)),
-                       "2024", NA)
-
-# Mettre à jour la variable "annee" en fonction de l'intitulé de 2019
-progv1$annee <- ifelse(is.na(progv1$annee) & progv1$Intitulé == progv1$Intitulé2019 & !is.na(progv1$Intitulé2019) & (progv1$Intitulé2024=="NA" | is.na(progv1$Intitulé2024)),
-                       "2019", progv1$annee)
-```
-
-
-
-```{r}
-library(dplyr)
-progv1 <- progv1 %>% 
-  select(Code, Sigle, `Code Programme`, Intitulé, 5:8, annee)
-head(progv1)
-```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
