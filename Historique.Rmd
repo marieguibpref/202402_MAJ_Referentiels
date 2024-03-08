@@ -243,7 +243,7 @@ On remarque que le fichier mis à jour contient tous les programmes de 2022 et d
 # Export du fichier actualisé
 
 ```{r}
-FILE_KEY_OUT_S3 <- "202402-MAJ_Referentiels/Historique/Prog_actualises"
+FILE_KEY_OUT_S3 <- "202402-MAJ_Referentiels/Historique/Prog_actualises.csv"
 BUCKET_OUT <- "marieguibert2"
 
 aws.s3::s3write_using(
