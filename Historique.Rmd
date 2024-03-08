@@ -61,6 +61,16 @@ length(setdiff(prog2022$`Code Programme`, prog$`Code Programme`)) # Nombre de pr
 
 On remarque 13 programmes avec des codes différents entre les deux fichiers
 
+On extrait ces 13 programmes afin de les identifier
+
+```{r}
+codes_manquants <- setdiff(prog2022$`Code Programme`, prog$`Code Programme`)
+resultats_diff <- prog2022[prog2022$`Code Programme` %in% codes_manquants,]
+resultats_diff
+```
+
+
+
 ```{r}
 length(intersect(prog2022$Intitulé, prog$Intitulé)) # Nombre de programmes en commun
 length(setdiff(prog2022$Intitulé, prog$Intitulé)) # Nombre de programmes différents
@@ -254,3 +264,19 @@ aws.s3::s3write_using(
     opts = list("region" = "")
 )
 ```
+
+# Export des programmes manquants
+
+```{r}
+FILE_KEY_OUT_S3 <- "202402-MAJ_Referentiels/Historique/Prog_manquants.csv"
+BUCKET_OUT <- "marieguibert2"
+
+aws.s3::s3write_using(
+    resultats_diff,
+    FUN = readr::write_csv, 
+    object = FILE_KEY_OUT_S3,
+    bucket = BUCKET_OUT,
+    opts = list("region" = "")
+)
+```
+
