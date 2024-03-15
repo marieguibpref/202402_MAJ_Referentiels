@@ -1,0 +1,252 @@
+---
+title: "Historique des centres de couts"
+output: html_document
+date: "2024-03-15"
+---
+
+
+# Comparaison des centres de couts
+
+```{r message = FALSE}
+library(tidyverse)
+```
+
+
+## Année 2022
+
+On importe d'abord les données de la calculette actualisée de cette année
+
+```{r warning = FALSE}
+BUCKET <- "marieguibert2"
+FILE_KEY_S3 <- "202402-MAJ_Referentiels/Fichiers_traites/Calculette_Chorus_2024-02-07_actualisee.xlsx"
+
+centres_couts <- 
+  aws.s3::s3read_using(
+    FUN = readxl::read_excel,
+    sheet = "09 - Centres de coûts (CCOU)",
+    skip = 8,
+    col_types = c("text", "text", "text", "text", "text", "text","text", "date", "date", "text", "text"),
+    object = FILE_KEY_S3,
+    bucket = BUCKET,
+    opts = list("region" = "")
+  )
+```
+
+On renomme le fichier pour avoir des noms de colonnes corrects
+
+```{r}
+centres_couts <- centres_couts %>% 
+  rename("Code_min" = "Code...1", 
+         "Code" = "Code...5")
+```
+
+On reformate les dates au format JJ-MM-AAAA:
+
+```{r}
+centres_couts$`Date de Début` <- format(centres_couts$`Date de Début`, "%d-%m-%Y")
+centres_couts$`Date de Fin` <- format(centres_couts$`Date de Fin`, "%d-%m-%Y")
+
+head(centres_couts, 10)
+```
+
+On importe à présent le fichier de 2022 :
+
+On importe d'abord les données de la calculette de 2022
+
+```{r warning = FALSE}
+FILE_KEY_S3 <- "202402-MAJ_Referentiels/Historique/xlsxCalculette_Chorus_2022-12-01.xlsx"
+
+
+centres_couts2022 <- 
+  aws.s3::s3read_using(
+    FUN = readxl::read_excel,
+    sheet = "09 - Centres de coûts (CCOU)",
+    skip = 8,
+    col_types = c("text", "text", "text", "text", "text", "text","text", "date", "date", "text", "text"),
+    object = FILE_KEY_S3,
+    bucket = BUCKET,
+    opts = list("region" = "")
+  )
+```
+
+On renomme le fichier pour avoir des noms de colonnes corrects
+
+```{r}
+centres_couts2022 <- centres_couts2022 %>% 
+  rename("Code_min" = "Code...1", 
+         "Code" = "Code...5")
+```
+
+On reformate les dates au format JJ-MM-AAAA:
+
+```{r}
+centres_couts2022$`Date de Début` <- format(centres_couts2022$`Date de Début`, "%d-%m-%Y")
+centres_couts2022$`Date de Fin` <- format(centres_couts2022$`Date de Fin`, "%d-%m-%Y")
+
+head(centres_couts, 10)
+```
+
+### Analyse des référentiels
+
+On analyse si notre référentiel est complet par rapport à 2019
+
+```{r}
+length(intersect(centres_couts2022$Code, centres_couts$Code)) # Nombre de centres de couts en commun
+length(setdiff(centres_couts2022$Code, centres_couts$Code)) # Nombre de centres de couts différents
+```
+
+On remarque 12 centres de couts avec des codes différents entre les deux fichiers
+
+On extrait ces 12 programmes afin de les identifier
+
+```{r}
+codes_manquants <- setdiff(centres_couts2022$Code, centres_couts$Code)
+resultats_diff <- centres_couts2022[centres_couts2022$Code %in% codes_manquants,]
+resultats_diff
+```
+
+```{r}
+length(intersect(centres_couts2022$Intitulé, centres_couts$Intitulé)) # Nombre de programmes en commun
+length(setdiff(centres_couts2022$Intitulé, centres_couts$Intitulé)) # Nombre de programmes différents
+```
+
+
+Cependant, on a 785 intitulés différents. Cela signifie que certains centres de couts ont été renommés ou complétés : on décide donc de garder les noms les plus récents pour avoir la dénomination la plus à jour possible
+
+
+### Mise à jour du référentiel        
+
+On fait une jointure sur le code programme pour mettre à jour le référentiel des programmes.\
+On conserve bien les informations présentes dans les deux fichiers.
+
+```{r}
+centres_coutsv1 <- merge(centres_couts, centres_couts2022, by = "Code", suffixes = c("2024", "2022"), all.y = T, all.x = T)
+head(centres_coutsv1)
+```
+
+```{r}
+dim(centres_couts); dim(centres_couts2022); dim(centres_coutsv1)
+```
+
+On remarque qu'on a bien ajouté les 13 centres de couts manquants
+
+Nous allons maintenant nettoyer notre fichier :
+- Si le nom est renseigné dans Intitulé2024 alors : on conserve cet intitulé + on renseigne 2024 dans la colonne annee + on conserve le code (ministère) et le sigle de 2024
+- Si le nom est pas renseigné : on prend l'intitulé de 2022 + on renseigne 2022 dans la colonne année + on conserve le sigle et le code (ministère) de 2022
+
+
+```{r}
+# On récupère tous les noms de colonnes finissant par 2022 ou 2024
+colonnes <- grep("2022$|2024$", names(centres_coutsv1), value = TRUE)
+
+# Parcours de chaque colonne à remplir
+for (col in colonnes) {
+  
+  colonne_cible <- sub("2022$|2024$", "", col)
+  
+  # Remplissez les valeurs manquantes dans la colonne cible en utilisant les valeurs correspondantes
+  centres_coutsv1[[colonne_cible]] <- ifelse(is.na(centres_coutsv1[[paste0(colonne_cible, "2024")]]),
+                                 centres_coutsv1[[paste0(colonne_cible, "2022")]],
+                                 centres_coutsv1[[paste0(colonne_cible, "2024")]])
+}
+
+# Suppression des colonnes se terminant par "2022" ou "2024"
+centres_coutsv1 <- centres_coutsv1[, !grepl("2022$|2024$", names(centres_coutsv1))]
+```
+
+Vérification :
+
+```{r}
+dim(centres_coutsv1)
+```
+
+```{r}
+head(centres_coutsv1)
+```
+
+## Année 2021
+
+### Importation des données 
+
+Les données de la calculette 2022 sont déjà importées et nous allons à présent nous baser sur le fichier le plus à jour (progv1)
+
+On importe les données de la calculette de 2021
+
+```{r warning = FALSE}
+FILE_KEY_S3 <- "202402-MAJ_Referentiels/Historique/xlsxCalculette_Chorus_2021-12-01.xlsx"
+
+centres_couts2021 <- 
+  aws.s3::s3read_using(
+    FUN = readxl::read_excel,
+    sheet = "09 - Centres de coûts (CCOU)",
+    skip = 8,
+    col_types = c("text", "text", "text", "text", "text", "text","text", "date", "date", "text", "text"),
+    object = FILE_KEY_S3,
+    bucket = BUCKET,
+    opts = list("region" = "")
+  )
+```
+
+On renomme le fichier pour avoir des noms de colonnes corrects
+
+```{r}
+centres_couts2021 <- centres_couts2021 %>% 
+  rename("Code_min" = "Code...1", 
+         "Code" = "Code...5")
+```
+
+On reformate les dates au format JJ-MM-AAAA:
+
+```{r}
+centres_couts2021$`Date de Début` <- format(centres_couts2021$`Date de Début`, "%d-%m-%Y")
+centres_couts2021$`Date de Fin` <- format(centres_couts2021$`Date de Fin`, "%d-%m-%Y")
+
+head(centres_couts2021, 10)
+```
+
+
+### Analyse des référentiels
+
+On analyse si notre référentiel est complet par rapport à 2021
+
+```{r}
+length(intersect(centres_couts2021$Code, centres_coutsv1$Code)) # Nombre de programmes en commun
+length(setdiff(centres_couts2021$Code, centres_coutsv1$Code)) # Nombre de programmes différents
+```
+
+On remarque que le fichier mis à jour contient tous les programmes de 2022 et de 2020.
+
+## Année 2020
+
+## Année 2019
+
+# Export du fichier actualisé
+
+```{r}
+FILE_KEY_OUT_S3 <- "202402-MAJ_Referentiels/Historique/centres_couts_actualises.csv"
+BUCKET_OUT <- "marieguibert2"
+
+aws.s3::s3write_using(
+    centres_coutsv1,
+    FUN = readr::write_csv, 
+    object = FILE_KEY_OUT_S3,
+    bucket = BUCKET_OUT,
+    opts = list("region" = "")
+)
+```
+
+# Export des programmes manquants
+
+```{r}
+FILE_KEY_OUT_S3 <- "202402-MAJ_Referentiels/Historique/centres_couts_manquants.csv"
+BUCKET_OUT <- "marieguibert2"
+
+aws.s3::s3write_using(
+    resultats_diff,
+    FUN = readr::write_csv, 
+    object = FILE_KEY_OUT_S3,
+    bucket = BUCKET_OUT,
+    opts = list("region" = "")
+)
+```
+

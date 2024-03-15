@@ -1,5 +1,5 @@
 ---
-title: "Historique"
+title: "Historique des programmes"
 author: "Marie"
 date: "2024-02-27"
 output: html_document
@@ -124,24 +124,24 @@ progv1$Sigle <- ifelse(is.na(progv1$Sigle2024),
 
 
 ```{r}
-# Si on prend l'intitulé de 2024 alors l'année est égale à 2024 sinon 2019
-progv1$annee <- ifelse(progv1$Intitulé == progv1$Intitulé2024 & 
-                         (progv1$Intitulé2024 != "NA" | !is.na(progv1$Intitulé2024)),
-                       "2024", NA)
-
-# Mettre à jour la variable "annee" en fonction de l'intitulé de 2019
-progv1$annee <- ifelse(is.na(progv1$annee) & 
-                         progv1$Intitulé == progv1$Intitulé2022 & 
-                         !is.na(progv1$Intitulé2022) & 
-                         (progv1$Intitulé2024=="NA" | is.na(progv1$Intitulé2024)),
-                       "2022", progv1$annee)
+# Si on prend l'intitulé de 2024 alors l'année est égale à 2024 sinon 2019*
+# progv1$annee <- ifelse(progv1$Intitulé == progv1$Intitulé2024 & 
+#                          (progv1$Intitulé2024 != "NA" | !is.na(progv1$Intitulé2024)),
+#                        "2024", NA)
+# 
+# # Mettre à jour la variable "annee" en fonction de l'intitulé de 2019
+# progv1$annee <- ifelse(is.na(progv1$annee) & 
+#                          progv1$Intitulé == progv1$Intitulé2022 & 
+#                          !is.na(progv1$Intitulé2022) & 
+#                          (progv1$Intitulé2024=="NA" | is.na(progv1$Intitulé2024)),
+#                        "2022", progv1$annee)
 ```
 
 
 ```{r}
 library(dplyr)
 progv1 <- progv1 %>% 
-  select(Code, Sigle, `Code Programme`, Intitulé, 5:8, annee)
+  select(Code, Sigle, `Code Programme`, Intitulé, 5:8)
 head(progv1)
 ```
 
