@@ -18,7 +18,7 @@ On importe d'abord les données de la calculette actualisée de cette année
 
 ```{r warning = FALSE}
 BUCKET <- "marieguibert2"
-FILE_KEY_S3 <- "202402-MAJ_Referentiels/Fichiers_traites/Calculette_Chorus_2024-02-07_actualisee.xlsx"
+FILE_KEY_S3 <- "202402-MAJ_Referentiels/Calculette_Chorus_2024-02-07_actualiseev2.xlsx"
 
 centres_couts <- 
   aws.s3::s3read_using(
@@ -30,6 +30,7 @@ centres_couts <-
     bucket = BUCKET,
     opts = list("region" = "")
   )
+head(centres_couts)
 ```
 
 On renomme le fichier pour avoir des noms de colonnes corrects
@@ -97,26 +98,25 @@ length(setdiff(centres_couts2022$Code, centres_couts$Code)) # Nombre de centres 
 
 On remarque 12 centres de couts avec des codes différents entre les deux fichiers
 
-On extrait ces 12 programmes afin de les identifier
+On extrait ces 12 centres de coûts afin de les identifier :
 
 ```{r}
-codes_manquants <- setdiff(centres_couts2022$Code, centres_couts$Code)
-resultats_diff <- centres_couts2022[centres_couts2022$Code %in% codes_manquants,]
+codes_manquants <- setdiff(centres_couts2022$Code, centres_couts$Code) # différence entre les codes de 2022 et la calculette actualisee
+resultats_diff <- centres_couts2022[centres_couts2022$Code %in% codes_manquants,] # on récupère les codes correspondants dans le fichier de 2022
 resultats_diff
 ```
 
 ```{r}
-length(intersect(centres_couts2022$Intitulé, centres_couts$Intitulé)) # Nombre de programmes en commun
-length(setdiff(centres_couts2022$Intitulé, centres_couts$Intitulé)) # Nombre de programmes différents
+length(intersect(centres_couts2022$Intitulé, centres_couts$Intitulé)) # Nombre de CC en commun
+length(setdiff(centres_couts2022$Intitulé, centres_couts$Intitulé)) # Nombre de CC différents
 ```
-
 
 Cependant, on a 785 intitulés différents. Cela signifie que certains centres de couts ont été renommés ou complétés : on décide donc de garder les noms les plus récents pour avoir la dénomination la plus à jour possible
 
 
 ### Mise à jour du référentiel        
 
-On fait une jointure sur le code programme pour mettre à jour le référentiel des programmes.\
+On fait une jointure sur le code programme pour mettre à jour le référentiel des centres de couts.\
 On conserve bien les informations présentes dans les deux fichiers.
 
 ```{r}
@@ -128,7 +128,7 @@ head(centres_coutsv1)
 dim(centres_couts); dim(centres_couts2022); dim(centres_coutsv1)
 ```
 
-On remarque qu'on a bien ajouté les 12 centres de couts manquants
+On remarque qu'on a bien ajouté les 12 centres de couts manquants (20 289 + 12 = 20 301)
 
 Nous allons maintenant nettoyer notre fichier :
 - Si le nom est renseigné dans Intitulé2024 alors : on conserve cet intitulé + on renseigne 2024 dans la colonne annee + on conserve le code (ministère) et le sigle de 2024
@@ -139,18 +139,20 @@ Nous allons maintenant nettoyer notre fichier :
 # On récupère tous les noms de colonnes finissant par 2022 ou 2024
 colonnes <- grep("2022$|2024$", names(centres_coutsv1), value = TRUE)
 
-# Parcours de chaque colonne à remplir
+# Pour chaque colonne parmi celles finissant par 2022 ou 2024
 for (col in colonnes) {
   
-  colonne_cible <- sub("2022$|2024$", "", col)
+  colonne_cible <- sub("2022$|2024$", "", col) # on initialise le nom de la colonne (sans suffixe)
   
-  # Remplissez les valeurs manquantes dans la colonne cible en utilisant les valeurs correspondantes
-  centres_coutsv1[[colonne_cible]] <- ifelse(is.na(centres_coutsv1[[paste0(colonne_cible, "2024")]]),
-                                 centres_coutsv1[[paste0(colonne_cible, "2022")]],
-                                 centres_coutsv1[[paste0(colonne_cible, "2024")]])
+  
+  # Le nom de la colonne correspond au nom dans 2022 ou 2024 à la fin
+  centres_coutsv1[[colonne_cible]] <- ifelse(is.na(centres_coutsv1[[paste0(colonne_cible, "2024")]]), # pour chaque valeur manquante
+                                 centres_coutsv1[[paste0(colonne_cible, "2022")]], # on prend la valeur de 2022
+                                 centres_coutsv1[[paste0(colonne_cible, "2024")]]) # sinon on prend celle de 2024
 }
 
-# Suppression des colonnes se terminant par "2022" ou "2024"
+
+# Suppression des colonnes se terminant par "2022" ou "2024" pour avoir un fichier propre
 centres_coutsv1 <- centres_coutsv1[, !grepl("2022$|2024$", names(centres_coutsv1))]
 ```
 
@@ -201,7 +203,7 @@ On reformate les dates au format JJ-MM-AAAA:
 centres_couts2021$`Date de Début` <- format(centres_couts2021$`Date de Début`, "%d-%m-%Y")
 centres_couts2021$`Date de Fin` <- format(centres_couts2021$`Date de Fin`, "%d-%m-%Y")
 
-head(centres_couts2021, 10)
+head(centres_couts2021)
 ```
 
 
@@ -254,7 +256,7 @@ On reformate les dates au format JJ-MM-AAAA:
 centres_couts2020$`Date de Début` <- format(centres_couts2020$`Date de Début`, "%d-%m-%Y")
 centres_couts2020$`Date de Fin` <- format(centres_couts2020$`Date de Fin`, "%d-%m-%Y")
 
-head(centres_couts2020, 10)
+head(centres_couts2020)
 ```
 
 
@@ -263,8 +265,8 @@ head(centres_couts2020, 10)
 On analyse si notre référentiel est complet par rapport à 2020
 
 ```{r}
-length(intersect(centres_couts2020$Code, centres_coutsv1$Code)) # Nombre de programmes en commun
-length(setdiff(centres_couts2020$Code, centres_coutsv1$Code)) # Nombre de programmes différents
+length(intersect(centres_couts2020$Code, centres_coutsv1$Code)) # Nombre de cc en commun
+length(setdiff(centres_couts2020$Code, centres_coutsv1$Code)) # Nombre de cc différents
 ```
 
 On remarque que le fichier mis à jour contient tous les centres de couts de 2022 et de 2020.
@@ -335,28 +337,32 @@ head(centres_coutsv2)
 dim(centres_coutsv1); dim(centres_couts2019); dim(centres_coutsv2)
 ```
 
+On a bien ajouté le centre de coûts manquant (20 302 au lieu de 20 301)
+
 Nettoyage du fichier :
 
-
 ```{r}
-# On récupère tous les noms de colonnes finissant par 2022 ou 2024
+# On récupère tous les noms de colonnes finissant par 2019 ou v1
 colonnes <- grep("2019$|v1$", names(centres_coutsv2), value = TRUE)
 
-# Parcours de chaque colonne à remplir
+# Pour chaque colonne parmi celles finissant par v1 ou 2019
 for (col in colonnes) {
   
-  colonne_cible <- sub("2019$|v1$", "", col)
+  colonne_cible <- sub("2019$|v1$", "", col) # on initialise le nom de la colonne (sans suffixe)
   
   # Remplissez les valeurs manquantes dans la colonne cible en utilisant les valeurs correspondantes
-  centres_coutsv1[[colonne_cible]] <- ifelse(is.na(centres_coutsv2[[paste0(colonne_cible, "2024")]]),
-                                 centres_coutsv2[[paste0(colonne_cible, "2022")]],
-                                 centres_coutsv2[[paste0(colonne_cible, "2024")]])
+  centres_coutsv2[[colonne_cible]] <- ifelse(is.na(centres_coutsv2[[paste0(colonne_cible, "v1")]]),
+                                 centres_coutsv2[[paste0(colonne_cible, "2019")]],
+                                 centres_coutsv2[[paste0(colonne_cible, "v1")]])
 }
 
-# Suppression des colonnes se terminant par "2022" ou "2024"
+# Suppression des colonnes se terminant par "v1" ou "2019"
 centres_coutsv2 <- centres_coutsv2[, !grepl("2019$|v1$", names(centres_coutsv2))]
 ```
 
+```{r}
+head(centres_coutsv2)
+```
 
 # Export du fichier actualisé
 

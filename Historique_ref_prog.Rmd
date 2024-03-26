@@ -1,11 +1,10 @@
 ---
-title: "Historique des programmes"
-author: "Marie"
-date: "2024-02-27"
+title: "Historique des référentiels de programmation"
 output: html_document
+date: "2024-03-26"
 ---
 
-# Comparaison des programmes 
+# Comparaison des référentiels de programmation 
 
 ## Année 2022
 
@@ -13,12 +12,12 @@ On importe d'abord les données de la calculette actualisée
 
 ```{r warning = FALSE}
 BUCKET <- "marieguibert2"
-FILE_KEY_S3 <- "202402-MAJ_Referentiels/Calculette_Chorus_2024-02-07_actualiseev2.xlsx"
+FILE_KEY_S3 <- "202402-MAJ_Referentiels/Fichiers_traites/Calculette_Chorus_2024-02-07_actualiseev2.xlsx"
 
-prog <- 
+ref_prog <- 
   aws.s3::s3read_using(
     FUN = readxl::read_excel,
-    sheet = "03 - Programmes",
+    sheet = "08 - Activités (OS,OP,OB,ACT)",
     skip = 8,
     col_types = c("text", "text", "text", "text", "date", "date", "text", "text"),
     object = FILE_KEY_S3,
@@ -279,4 +278,3 @@ aws.s3::s3write_using(
     opts = list("region" = "")
 )
 ```
-
