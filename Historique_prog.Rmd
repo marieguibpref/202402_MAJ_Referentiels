@@ -13,7 +13,7 @@ On importe d'abord les données de la calculette actualisée
 
 ```{r warning = FALSE}
 BUCKET <- "marieguibert2"
-FILE_KEY_S3 <- "202402-MAJ_Referentiels/Calculette_Chorus_2024-02-07_actualiseev2.xlsx"
+FILE_KEY_S3 <- "202402-MAJ_Referentiels/Fichiers_traites/Calculette_Chorus_2024-02-07_actualisee.xlsx"
 
 prog <- 
   aws.s3::s3read_using(
@@ -52,7 +52,7 @@ head(prog2022, 10)
 
 ### Analyse des référentiels
 
-On analyse si notre référentiel est complet par rapport à 2019
+On analyse si notre référentiel est complet par rapport à 2022
 
 ```{r}
 length(intersect(prog2022$`Code Programme`, prog$`Code Programme`)) # Nombre de programmes en commun
