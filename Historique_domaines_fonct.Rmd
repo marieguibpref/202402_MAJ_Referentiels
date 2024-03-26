@@ -10,7 +10,6 @@ date: "2024-03-26"
 library(tidyverse)
 ```
 
-
 ## Année 2022
 
 On importe d'abord les données de la calculette actualisée de cette année
@@ -19,71 +18,73 @@ On importe d'abord les données de la calculette actualisée de cette année
 BUCKET <- "marieguibert2"
 FILE_KEY_S3 <- "202402-MAJ_Referentiels/Calculette_Chorus_2024-02-07_actualiseev2.xlsx"
 
-centres_couts <- 
+dom_fonct <- 
   aws.s3::s3read_using(
     FUN = readxl::read_excel,
-    sheet = "09 - Centres de coûts (CCOU)",
+    sheet = "07 - Domaines Fonct. (DF)",
     skip = 8,
-    col_types = c("text", "text", "text", "text", "text", "text","text", "date", "date", "text", "text"),
+    col_types = c("text", "text", "text", "text", "text", "text","text", "text", "date", "date", "text", "text","text", "text"),
     object = FILE_KEY_S3,
     bucket = BUCKET,
     opts = list("region" = "")
   )
-head(centres_couts)
+head(dom_fonct)
 ```
 
 On renomme le fichier pour avoir des noms de colonnes corrects
 
 ```{r}
-centres_couts <- centres_couts %>% 
+dom_fonct <- dom_fonct %>% 
   rename("Code_min" = "Code...1", 
+         "Code_prog" = "Code...3", 
          "Code" = "Code...5")
 ```
 
 On reformate les dates au format JJ-MM-AAAA:
 
 ```{r}
-centres_couts$`Date de Début` <- format(centres_couts$`Date de Début`, "%d-%m-%Y")
-centres_couts$`Date de Fin` <- format(centres_couts$`Date de Fin`, "%d-%m-%Y")
+dom_fonct$Début <- format(dom_fonct$Début, "%d-%m-%Y")
+dom_fonct$Fin <- format(dom_fonct$Fin, "%d-%m-%Y")
 
-head(centres_couts, 10)
+head(dom_fonct)
 ```
 
 On importe à présent le fichier de 2022 :
-
-On importe d'abord les données de la calculette de 2022
 
 ```{r warning = FALSE}
 FILE_KEY_S3 <- "202402-MAJ_Referentiels/Historique/xlsxCalculette_Chorus_2022-12-01.xlsx"
 
 
-centres_couts2022 <- 
+dom_fonct2022 <- 
   aws.s3::s3read_using(
     FUN = readxl::read_excel,
-    sheet = "09 - Centres de coûts (CCOU)",
+    sheet = "07 - Domaines Fonct. (DF)",
     skip = 8,
-    col_types = c("text", "text", "text", "text", "text", "text","text", "date", "date", "text", "text"),
+    col_types = c("text", "text", "text", "text", "text", "text","text", "date", "date", "text", "text","text", "text"),
     object = FILE_KEY_S3,
     bucket = BUCKET,
     opts = list("region" = "")
   )
+
+head(dom_fonct2022)
 ```
 
 On renomme le fichier pour avoir des noms de colonnes corrects
 
 ```{r}
-centres_couts2022 <- centres_couts2022 %>% 
+dom_fonct2022 <- dom_fonct2022 %>% 
   rename("Code_min" = "Code...1", 
+         "Code_prog" = "Code...3", 
          "Code" = "Code...5")
 ```
 
 On reformate les dates au format JJ-MM-AAAA:
 
 ```{r}
-centres_couts2022$`Date de Début` <- format(centres_couts2022$`Date de Début`, "%d-%m-%Y")
-centres_couts2022$`Date de Fin` <- format(centres_couts2022$`Date de Fin`, "%d-%m-%Y")
+dom_fonct2022$Début <- format(dom_fonct2022$Début, "%d-%m-%Y")
+dom_fonct2022$Fin <- format(dom_fonct2022$Fin, "%d-%m-%Y")
 
-head(centres_couts, 10)
+head(dom_fonct2022)
 ```
 
 ### Analyse des référentiels
@@ -91,26 +92,27 @@ head(centres_couts, 10)
 On analyse si notre référentiel est complet par rapport à 2022
 
 ```{r}
-length(intersect(centres_couts2022$Code, centres_couts$Code)) # Nombre de centres de couts en commun
-length(setdiff(centres_couts2022$Code, centres_couts$Code)) # Nombre de centres de couts différents
+length(intersect(dom_fonct2022$Code,dom_fonct$Code)) # Nombre de domaines fonctionnels en commun
+length(setdiff(dom_fonct2022$Code, dom_fonct$Code)) # Nombre de domaines fonctionnels différents
 ```
 
-On remarque 12 centres de couts avec des codes différents entre les deux fichiers
+On remarque 210 domaines fonctionnels avec des codes différents entre les deux fichiers. 
+On a 210 codes de 2022 qui ne sont pas dans notre fichier actuel
 
-On extrait ces 12 centres de coûts afin de les identifier :
+On extrait ces 210 domaines fonctionnels afin de les identifier :
 
 ```{r}
-codes_manquants <- setdiff(centres_couts2022$Code, centres_couts$Code) # différence entre les codes de 2022 et la calculette actualisee
-resultats_diff <- centres_couts2022[centres_couts2022$Code %in% codes_manquants,] # on récupère les codes correspondants dans le fichier de 2022
+codes_manquants <- setdiff(dom_fonct2022$Code, dom_fonct$Code) # différence entre les codes de 2022 et la calculette actualisee
+resultats_diff <- dom_fonct2022[dom_fonct2022$Code %in% codes_manquants,] # on récupère les codes correspondants dans le fichier de 2022
 resultats_diff
 ```
 
 ```{r}
-length(intersect(centres_couts2022$Intitulé, centres_couts$Intitulé)) # Nombre de CC en commun
-length(setdiff(centres_couts2022$Intitulé, centres_couts$Intitulé)) # Nombre de CC différents
+length(intersect(dom_fonct2022$Intitulé, dom_fonct$Intitulé)) # Nombre de domaines fonctionnels en commun
+length(setdiff(dom_fonct2022$Intitulé, dom_fonct$Intitulé)) # Nombre de domaines fonctionnels différents
 ```
 
-Cependant, on a 785 intitulés différents. Cela signifie que certains centres de couts ont été renommés ou complétés : on décide donc de garder les noms les plus récents pour avoir la dénomination la plus à jour possible
+Cependant, on a 1731 intitulés différents. Cela signifie que certains centres de couts ont été renommés ou complétés : on décide donc de garder les noms les plus récents pour avoir la dénomination la plus à jour possible
 
 
 ### Mise à jour du référentiel        
@@ -119,15 +121,18 @@ On fait une jointure sur le code programme pour mettre à jour le référentiel 
 On conserve bien les informations présentes dans les deux fichiers.
 
 ```{r}
-centres_coutsv1 <- merge(centres_couts, centres_couts2022, by = "Code", suffixes = c("2024", "2022"), all.y = T, all.x = T)
-head(centres_coutsv1)
+dom_fonctv1 <- merge(dom_fonct, dom_fonct2022, by = "Code", suffixes = c("2024", "2022"), all.y = T, all.x = T)
+head(dom_fonctv1)
 ```
 
 ```{r}
-dim(centres_couts); dim(centres_couts2022); dim(centres_coutsv1)
+dim(dom_fonct); dim(dom_fonct2022); dim(dom_fonctv1)
 ```
 
-On remarque qu'on a bien ajouté les 12 centres de couts manquants (20 289 + 12 = 20 301)
+On remarque qu'on a bien ajouté les 210 domaines fonctionnels (5541 + 210 = 5751)
+
+
+# A recommencer ici
 
 Nous allons maintenant nettoyer notre fichier :
 
