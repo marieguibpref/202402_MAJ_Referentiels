@@ -39,6 +39,7 @@ shogun_prog <-
     FUN = readxl::read_excel, 
     sheet = "03 - Programmes",
     skip = 8,
+    col_types = c("text", "text", "text", "text", "date", "date", "text", "text"),
     object = FILE_KEY_S3,
     bucket = BUCKET,
     opts = list("region" = "")
@@ -75,7 +76,7 @@ prog_domaines_fonct <-
   aws.s3::s3read_using(
     FUN = readODS::read_ods, 
     object = FILE_KEY_S3,
-    bucket = BUCKET,
+    bucket = BUCKET, 
     opts = list("region" = "")
   )
 
@@ -238,6 +239,7 @@ shogun_domaines_fonct <-
     FUN = readxl::read_excel, 
     sheet = "07 - Domaines Fonct. (DF)",
     skip = 8,
+    col_types = c("text", "text", "text", "text", "text", "text","text", "text", "date", "date", "text", "text","text", "text"),
     object = FILE_KEY_S3,
     bucket = BUCKET,
     opts = list("region" = "")
@@ -398,6 +400,11 @@ shogun_ref_prog <-
     FUN = readxl::read_excel, 
     sheet = "08 - Activités (OS,OP,OB,ACT)",
     skip = 8,
+    col_types = c("text", "text", "text", "text", "text", 
+                  "text", "text", "text", "text", "text", 
+                  "text", "text", "text", "text",
+                  "text", "text", "text", "date", "date", "date", 
+                  "text", "text", "text"),
     object = FILE_KEY_S3,
     bucket = BUCKET,
     opts = list("region" = "")
@@ -585,6 +592,7 @@ shogun_centres_couts <-
     FUN = readxl::read_excel, 
     sheet = "09 - Centres de coûts (CCOU)",
     skip = 8,
+    col_types = c("text", "text", "text", "text", "text", "text","text", "date", "date", "text", "text"),
     object = FILE_KEY_S3,
     bucket = BUCKET,
     opts = list("region" = "")

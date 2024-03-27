@@ -18,7 +18,7 @@ On importe d'abord les données de la calculette actualisée de cette année
 
 ```{r warning = FALSE}
 BUCKET <- "marieguibert2"
-FILE_KEY_S3 <- "202402-MAJ_Referentiels/Calculette_Chorus_2024-02-07_actualiseev2.xlsx"
+FILE_KEY_S3 <- "202402-MAJ_Referentiels/Fichiers_traites/Calculette_Chorus_2024-02-27_actualisee.xlsx"
 
 centres_couts <- 
   aws.s3::s3read_using(
