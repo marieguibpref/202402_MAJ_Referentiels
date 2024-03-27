@@ -12,6 +12,8 @@ library(tidyverse)
 
 ## Année 2022
 
+### Importation des données
+
 On importe d'abord les données de la calculette actualisée de cette année
 
 ```{r warning = FALSE}
@@ -75,7 +77,8 @@ On renomme le fichier pour avoir des noms de colonnes corrects
 dom_fonct2022 <- dom_fonct2022 %>% 
   rename("Code_min" = "Code...1", 
          "Code_prog" = "Code...3", 
-         "Code" = "Code...5")
+         "Code" = "Code...5",
+         "Missions parlementaires"="Mission Parlementaire")
 ```
 
 On reformate les dates au format JJ-MM-AAAA:
@@ -112,16 +115,16 @@ length(intersect(dom_fonct2022$Intitulé, dom_fonct$Intitulé)) # Nombre de doma
 length(setdiff(dom_fonct2022$Intitulé, dom_fonct$Intitulé)) # Nombre de domaines fonctionnels différents
 ```
 
-Cependant, on a 1731 intitulés différents. Cela signifie que certains centres de couts ont été renommés ou complétés : on décide donc de garder les noms les plus récents pour avoir la dénomination la plus à jour possible
+Cependant, on a 1731 intitulés différents. Cela signifie que certains domaines fonctionnels ont été renommés ou complétés : on décide donc de garder les noms les plus récents pour avoir la dénomination la plus à jour possible
 
 
 ### Mise à jour du référentiel        
 
-On fait une jointure sur le code programme pour mettre à jour le référentiel des centres de couts.\
+On fait une jointure sur le code programme pour mettre à jour le référentiel des domaines fonctionnels.\
 On conserve bien les informations présentes dans les deux fichiers.
 
 ```{r}
-dom_fonctv1 <- merge(dom_fonct, dom_fonct2022, by = "Code", suffixes = c("2024", "2022"), all.y = T, all.x = T)
+dom_fonctv1 <- merge(dom_fonct, dom_fonct2022, by = "Code", suffixes = c("_2024", "_2022"), all.y = T, all.x = T)
 head(dom_fonctv1)
 ```
 
@@ -131,60 +134,63 @@ dim(dom_fonct); dim(dom_fonct2022); dim(dom_fonctv1)
 
 On remarque qu'on a bien ajouté les 210 domaines fonctionnels (5541 + 210 = 5751)
 
-
-# A recommencer ici
-
 Nous allons maintenant nettoyer notre fichier :
-
 
 ```{r}
 # On récupère tous les noms de colonnes finissant par 2022 ou 2024
-colonnes <- grep("2022$|2024$", names(centres_coutsv1), value = TRUE)
+colonnes <- grep("_2022$|_2024$", names(dom_fonctv1), value = TRUE)
 
 # Pour chaque colonne parmi celles finissant par 2022 ou 2024
 for (col in colonnes) {
   
-  colonne_cible <- sub("2022$|2024$", "", col) # on initialise le nom de la colonne (sans suffixe)
+  colonne_cible <- sub("_2022$|_2024$", "", col) # on initialise le nom de la colonne (sans suffixe)
   
   
   # Le nom de la colonne correspond au nom dans 2022 ou 2024 à la fin
-  centres_coutsv1[[colonne_cible]] <- ifelse(is.na(centres_coutsv1[[paste0(colonne_cible, "2024")]]), # pour chaque valeur manquante
-                                 centres_coutsv1[[paste0(colonne_cible, "2022")]], # on prend la valeur de 2022
-                                 centres_coutsv1[[paste0(colonne_cible, "2024")]]) # sinon on prend celle de 2024
+  dom_fonctv1[[colonne_cible]] <- ifelse(is.na(dom_fonctv1[[paste0(colonne_cible, "_2024")]]), # pour chaque valeur manquante
+                                 dom_fonctv1[[paste0(colonne_cible, "_2022")]], # on prend la valeur de 2022
+                                 dom_fonctv1[[paste0(colonne_cible, "_2024")]]) # sinon on prend celle de 2024
 }
 
 
 # Suppression des colonnes se terminant par "2022" ou "2024" pour avoir un fichier propre
-centres_coutsv1 <- centres_coutsv1[, !grepl("2022$|2024$", names(centres_coutsv1))]
+dom_fonctv1 <- dom_fonctv1[, !grepl("_2022$|_2024$", names(dom_fonctv1))]
 ```
 
 Vérification :
 
 ```{r}
-dim(centres_coutsv1)
+dim(dom_fonctv1)
+```
+
+On supprime les colonnes qui ne sont pas présentes dans la calculette de 2024 (actualisee)
+
+```{r}
+dom_fonctv1 <- dom_fonctv1 %>% 
+  select(-`DF(s) cible(s) pour 2019`)
 ```
 
 ```{r}
-head(centres_coutsv1)
+head(dom_fonctv1)
 ```
 
 ## Année 2021
 
 ### Importation des données 
 
-Les données de la calculette 2022 sont déjà importées et nous allons à présent nous baser sur le fichier le plus à jour (progv1)
+Les données de la calculette 2022 sont déjà importées et nous allons à présent nous baser sur le fichier le plus à jour (dom_fonctv1)
 
 On importe les données de la calculette de 2021
 
 ```{r warning = FALSE}
 FILE_KEY_S3 <- "202402-MAJ_Referentiels/Historique/xlsxCalculette_Chorus_2021-12-01.xlsx"
 
-centres_couts2021 <- 
+dom_fonct2021 <- 
   aws.s3::s3read_using(
     FUN = readxl::read_excel,
-    sheet = "09 - Centres de coûts (CCOU)",
+    sheet = "07 - Domaines Fonct. (DF)",
     skip = 8,
-    col_types = c("text", "text", "text", "text", "text", "text","text", "date", "date", "text", "text"),
+    col_types = c("text", "text", "text", "text", "text", "text","text", "date", "date", "text", "text","text", "text"),
     object = FILE_KEY_S3,
     bucket = BUCKET,
     opts = list("region" = "")
@@ -194,18 +200,20 @@ centres_couts2021 <-
 On renomme le fichier pour avoir des noms de colonnes corrects
 
 ```{r}
-centres_couts2021 <- centres_couts2021 %>% 
+dom_fonct2021 <- dom_fonct2021 %>% 
   rename("Code_min" = "Code...1", 
-         "Code" = "Code...5")
+         "Code_prog" = "Code...3", 
+         "Code" = "Code...5",
+         "Missions parlementaires"="Mission Parlementaire")
 ```
 
 On reformate les dates au format JJ-MM-AAAA:
 
 ```{r}
-centres_couts2021$`Date de Début` <- format(centres_couts2021$`Date de Début`, "%d-%m-%Y")
-centres_couts2021$`Date de Fin` <- format(centres_couts2021$`Date de Fin`, "%d-%m-%Y")
+dom_fonct2021$Début <- format(dom_fonct2021$Début, "%d-%m-%Y")
+dom_fonct2021$Fin <- format(dom_fonct2021$Fin, "%d-%m-%Y")
 
-head(centres_couts2021)
+head(dom_fonct2021)
 ```
 
 
@@ -214,11 +222,77 @@ head(centres_couts2021)
 On analyse si notre référentiel est complet par rapport à 2021
 
 ```{r}
-length(intersect(centres_couts2021$Code, centres_coutsv1$Code)) # Nombre de programmes en commun
-length(setdiff(centres_couts2021$Code, centres_coutsv1$Code)) # Nombre de programmes différents
+length(intersect(dom_fonct2021$Code, dom_fonctv1$Code)) # Nombre de domaines fonctionnels en commun
+length(setdiff(dom_fonct2021$Code, dom_fonctv1$Code)) # Nombre de domaines fonctionnels différents
 ```
 
-On remarque que le fichier mis à jour contient tous les centres de couts de 2022 et de 2020.
+On remarque que dans le fichier mis à jour avec les domaines fonctionnels de 2021 et 2024, il nous en manque encore 9 \
+Nous allons donc mettre à jour le fichier une seconde fois
+
+
+On extrait ces 9 domaines fonctionnels afin de les identifier :
+
+```{r}
+codes_manquants <- setdiff(dom_fonct2021$Code, dom_fonctv1$Code) # différence entre les codes de 2022 et la calculette actualisee
+resultats_diff2 <- dom_fonct2021[dom_fonct2021$Code %in% codes_manquants,] # on récupère les codes correspondants dans le fichier de 2022
+resultats_diff <- rbind(resultats_diff, resultats_diff2)
+```
+
+### Mise à jour du référentiel   
+
+On fait une jointure sur le code programme pour mettre à jour le référentiel des domaines fonctionnels.\
+On conserve bien les informations présentes dans les deux fichiers.
+
+```{r}
+dom_fonctv2 <- merge(dom_fonctv1, dom_fonct2021, by = "Code", suffixes = c("_v1", "_2021"), all.y = T, all.x = T)
+head(dom_fonctv2)
+```
+
+```{r}
+dim(dom_fonctv1); dim(dom_fonct2021); dim(dom_fonctv2)
+```
+
+On remarque qu'on a bien ajouté les 9 domaines fonctionnels (5751 + 9 = 5760)
+
+Nous allons maintenant nettoyer notre fichier :
+
+```{r}
+# On récupère tous les noms de colonnes finissant par 2022 ou 2024
+colonnes <- grep("_v1$|_2021$", names(dom_fonctv2), value = TRUE)
+
+# Pour chaque colonne parmi celles finissant par 2022 ou 2024
+for (col in colonnes) {
+  
+  colonne_cible <- sub("_2021$|_v1$", "", col) # on initialise le nom de la colonne (sans suffixe)
+  
+  
+  # Le nom de la colonne correspond au nom dans 2022 ou 2024 à la fin
+  dom_fonctv2[[colonne_cible]] <- ifelse(is.na(dom_fonctv2[[paste0(colonne_cible, "_v1")]]), # pour chaque valeur manquante
+                                 dom_fonctv2[[paste0(colonne_cible, "_2021")]], # on prend la valeur de 2021
+                                 dom_fonctv2[[paste0(colonne_cible, "_v1")]]) # sinon on prend celle de la v1
+}
+
+
+# Suppression des colonnes se terminant par "2022" ou "2024" pour avoir un fichier propre
+dom_fonctv2 <- dom_fonctv2[, !grepl("_2021$|_v1$", names(dom_fonctv2))]
+```
+
+Vérification :
+
+```{r}
+dim(dom_fonctv2)
+```
+On supprime les colonnes qui ne sont pas présentes dans la calculette de 2024 (actualisee)
+
+```{r}
+dom_fonctv2 <- dom_fonctv2 %>% 
+  select(-`DF(s) cible(s) pour 2019`)
+```
+
+```{r}
+head(dom_fonctv2)
+```
+
 
 ## Année 2020
 
@@ -231,34 +305,35 @@ On importe les données de la calculette de 2020
 ```{r warning = FALSE}
 FILE_KEY_S3 <- "202402-MAJ_Referentiels/Historique/xlsxCalculette_Chorus_2020-12-01.xlsx"
 
-centres_couts2020 <- 
+dom_fonct2020 <- 
   aws.s3::s3read_using(
     FUN = readxl::read_excel,
-    sheet = "09 - Centres de coûts (CCOU)",
+    sheet = "07 - Domaines Fonct. (DF)",
     skip = 8,
-    col_types = c("text", "text", "text", "text", "text", "text","text", "date", "date", "text", "text"),
+    col_types = c("text", "text", "text", "text", "text", "text","text", "date", "date", "text", "text","text", "text"),
     object = FILE_KEY_S3,
     bucket = BUCKET,
     opts = list("region" = "")
   )
 ```
 
-
 On renomme le fichier pour avoir des noms de colonnes corrects
 
 ```{r}
-centres_couts2020 <- centres_couts2020 %>% 
+dom_fonct2020 <- dom_fonct2020 %>% 
   rename("Code_min" = "Code...1", 
-         "Code" = "Code...5")
+         "Code_prog" = "Code...3", 
+         "Code" = "Code...5",
+         "Missions parlementaires"="Mission Parlementaire")
 ```
 
 On reformate les dates au format JJ-MM-AAAA:
 
 ```{r}
-centres_couts2020$`Date de Début` <- format(centres_couts2020$`Date de Début`, "%d-%m-%Y")
-centres_couts2020$`Date de Fin` <- format(centres_couts2020$`Date de Fin`, "%d-%m-%Y")
+dom_fonct2020$Début <- format(dom_fonct2020$Début, "%d-%m-%Y")
+dom_fonct2020$Fin <- format(dom_fonct2020$Fin, "%d-%m-%Y")
 
-head(centres_couts2020)
+head(dom_fonct2020)
 ```
 
 
@@ -267,113 +342,210 @@ head(centres_couts2020)
 On analyse si notre référentiel est complet par rapport à 2020
 
 ```{r}
-length(intersect(centres_couts2020$Code, centres_coutsv1$Code)) # Nombre de cc en commun
-length(setdiff(centres_couts2020$Code, centres_coutsv1$Code)) # Nombre de cc différents
+length(intersect(dom_fonct2020$Code, dom_fonctv2$Code)) # Nombre de domaines fonctionnels en commun
+length(setdiff(dom_fonct2020$Code, dom_fonctv2$Code)) # Nombre de domaines fonctionnels différents
 ```
 
-On remarque que le fichier mis à jour contient tous les centres de couts de 2022 et de 2020.
+On remarque que dans le fichier mis à jour avec les domaines fonctionnels de 2020 et 2024, il nous en manque encore 8 \
+Nous allons donc mettre à jour le fichier une troisième fois
 
+On extrait ces 8 domaines fonctionnels afin de les identifier :
+
+```{r}
+codes_manquants <- setdiff(dom_fonct2020$Code, dom_fonctv2$Code) # différence entre les codes de 2022 et la calculette actualisee
+resultats_diff3 <- dom_fonct2020[dom_fonct2020$Code %in% codes_manquants,] # on récupère les codes correspondants dans le fichier de 2022
+resultats_diffsup <- resultats_diff3
+```
+
+### Mise à jour du référentiel   
+
+On fait une jointure sur le code programme pour mettre à jour le référentiel des domaines fonctionnels.\
+On conserve bien les informations présentes dans les deux fichiers.
+
+```{r}
+dom_fonctv3 <- merge(dom_fonctv2, dom_fonct2020, by = "Code", suffixes = c("_v2", "_2020"), all.y = T, all.x = T)
+head(dom_fonctv3)
+```
+```{r}
+dim(dom_fonctv2); dim(dom_fonct2020); dim(dom_fonctv3)
+```
+
+On remarque qu'on a bien ajouté les 8 domaines fonctionnels (5760 + 8 = 5768)
+
+Nous allons maintenant nettoyer notre fichier :
+
+```{r}
+# On récupère tous les noms de colonnes finissant par 2022 ou 2024
+colonnes <- grep("_v2$|_2020$", names(dom_fonctv3), value = TRUE)
+
+# Pour chaque colonne parmi celles finissant par 2022 ou 2024
+for (col in colonnes) {
+  
+  colonne_cible <- sub("_2020$|_v2$", "", col) # on initialise le nom de la colonne (sans suffixe)
+  
+  
+  # Le nom de la colonne correspond au nom dans 2022 ou 2024 à la fin
+  dom_fonctv3[[colonne_cible]] <- ifelse(is.na(dom_fonctv3[[paste0(colonne_cible, "_v2")]]), # pour chaque valeur manquante
+                                 dom_fonctv3[[paste0(colonne_cible, "_2020")]], # on prend la valeur de 2020
+                                 dom_fonctv3[[paste0(colonne_cible, "_v2")]]) # sinon on prend celle de la v2
+}
+
+
+# Suppression des colonnes se terminant par "2022" ou "2024" pour avoir un fichier propre
+dom_fonctv3 <- dom_fonctv3[, !grepl("_2020$|_v2$", names(dom_fonctv3))]
+```
+
+Vérification :
+
+```{r}
+dim(dom_fonctv3)
+```
+On supprime les colonnes qui ne sont pas présentes dans la calculette de 2024 (actualisee)
+
+```{r}
+dom_fonctv3 <- dom_fonctv3 %>% 
+  select(-`DF(s) cible(s) pour 2020`)
+```
+
+```{r}
+head(dom_fonctv3)
+```
 
 ## Année 2019
 
-Les données de la calculette 2022 sont déjà importées et nous allons à présent nous baser sur le fichier le plus à jour (centres_coutsv1)
+### Importation des données
+
+Les données de la calculette 2022 sont déjà importées et nous allons à présent nous baser sur le fichier le plus à jour (dom_fonctv3)
 
 On importe les données de la calculette de 2019
 
 ```{r warning = FALSE}
 FILE_KEY_S3 <- "202402-MAJ_Referentiels/Historique/xlsxCalculette_Chorus_2019-12-01.xlsx"
 
-centres_couts2019 <- 
+dom_fonct2019 <- 
   aws.s3::s3read_using(
     FUN = readxl::read_excel,
-    sheet = "09 - Centres de coûts (CCOU)",
+    sheet = "07 - Domaines Fonct. (DF)",
     skip = 8,
-    col_types = c("text", "text", "text", "text", "text", "text","text", "date", "date", "text", "text"),
+    col_types = c("text", "text", "text", "text", "text", "text","text", "date", "date", "text", "text","text", "text"),
     object = FILE_KEY_S3,
     bucket = BUCKET,
     opts = list("region" = "")
   )
 ```
-
-
 On renomme le fichier pour avoir des noms de colonnes corrects
 
 ```{r}
-centres_couts2019 <- centres_couts2019 %>% 
+dom_fonct2019 <- dom_fonct2019 %>% 
   rename("Code_min" = "Code...1", 
-         "Code" = "Code...5")
+         "Code_prog" = "Code...3", 
+         "Code" = "Code...5",
+         "Missions parlementaires"="Mission Parlementaire")
 ```
 
 On reformate les dates au format JJ-MM-AAAA:
 
 ```{r}
-centres_couts2019$`Date de Début` <- format(centres_couts2019$`Date de Début`, "%d-%m-%Y")
-centres_couts2019$`Date de Fin` <- format(centres_couts2019$`Date de Fin`, "%d-%m-%Y")
+dom_fonct2019$Début <- format(dom_fonct2019$Début, "%d-%m-%Y")
+dom_fonct2019$Fin <- format(dom_fonct2019$Fin, "%d-%m-%Y")
 
-head(centres_couts2019, 10)
+head(dom_fonct2019)
 ```
-
 
 ### Analyse des référentiels
 
 On analyse si notre référentiel est complet par rapport à 2019
 
 ```{r}
-length(intersect(centres_couts2019$Code, centres_coutsv1$Code)) # Nombre de programmes en commun
-length(setdiff(centres_couts2019$Code, centres_coutsv1$Code)) # Nombre de programmes différents
+length(intersect(dom_fonct2019$Code, dom_fonctv3$Code)) # Nombre de domaines fonctionnels en commun
+length(setdiff(dom_fonct2019$Code, dom_fonctv3$Code)) # Nombre de domaines fonctionnels différents
 ```
 
-Il manque un centre de couts qui était présent dans la calculette de 2019 donc on va le rajouter à notre référentiel. 
+On remarque que dans le fichier mis à jour avec les domaines fonctionnels de 2019 et 2024, il nous en manque encore 4 \
+Nous allons donc mettre à jour le fichier une dernière fois 
+
+On extrait ces 4 domaines fonctionnels afin de les identifier :
+
+```{r}
+codes_manquants <- setdiff(dom_fonct2019$Code, dom_fonctv3$Code) # différence entre les codes de 2022 et la calculette actualisee
+resultats_diff4 <- dom_fonct2019[dom_fonct2019$Code %in% codes_manquants,] # on récupère les codes correspondants dans le fichier de 2022
+
+resultats_diff <- rbind(resultats_diff2, resultats_diff4)
+```
 
 ### Mise à jour du référentiel        
 
-On fait une jointure sur le code programme pour mettre à jour le référentiel des programmes.\
+On fait une jointure sur le code programme pour mettre à jour le référentiel des domaines fonctionnels.\
 On conserve bien les informations présentes dans les deux fichiers.
 
 ```{r}
-centres_coutsv2 <- merge(centres_couts2019, centres_coutsv1, by = "Code", suffixes = c("v1", "2019"), all.y = T, all.x = T)
-head(centres_coutsv2)
+dom_fonctv4 <- merge(dom_fonctv3, dom_fonct2019, by = "Code", suffixes = c("_v3", "_2019"), all.y = T, all.x = T)
+head(dom_fonctv4)
 ```
 
 ```{r}
-dim(centres_coutsv1); dim(centres_couts2019); dim(centres_coutsv2)
+dim(dom_fonctv3); dim(dom_fonct2019); dim(dom_fonctv4)
 ```
 
-On a bien ajouté le centre de coûts manquant (20 302 au lieu de 20 301)
+On remarque qu'on a bien ajouté les 8 domaines fonctionnels (5768 + 4 = 5772)
 
-Nettoyage du fichier :
+Nous allons maintenant nettoyer notre fichier :
 
 ```{r}
-# On récupère tous les noms de colonnes finissant par 2019 ou v1
-colonnes <- grep("2019$|v1$", names(centres_coutsv2), value = TRUE)
+# On récupère tous les noms de colonnes finissant par 2022 ou 2024
+colonnes <- grep("_v3$|_2019$", names(dom_fonctv4), value = TRUE)
 
-# Pour chaque colonne parmi celles finissant par v1 ou 2019
+# Pour chaque colonne parmi celles finissant par 2022 ou 2024
 for (col in colonnes) {
   
-  colonne_cible <- sub("2019$|v1$", "", col) # on initialise le nom de la colonne (sans suffixe)
+  colonne_cible <- sub("_2019$|_v3$", "", col) # on initialise le nom de la colonne (sans suffixe)
   
-  # Remplissez les valeurs manquantes dans la colonne cible en utilisant les valeurs correspondantes
-  centres_coutsv2[[colonne_cible]] <- ifelse(is.na(centres_coutsv2[[paste0(colonne_cible, "v1")]]),
-                                 centres_coutsv2[[paste0(colonne_cible, "2019")]],
-                                 centres_coutsv2[[paste0(colonne_cible, "v1")]])
+  
+  # Le nom de la colonne correspond au nom dans 2022 ou 2024 à la fin
+  dom_fonctv4[[colonne_cible]] <- ifelse(is.na(dom_fonctv4[[paste0(colonne_cible, "_v3")]]), # pour chaque valeur manquante
+                                 dom_fonctv4[[paste0(colonne_cible, "_2019")]], # on prend la valeur de 2020
+                                 dom_fonctv4[[paste0(colonne_cible, "_v3")]]) # sinon on prend celle de la v3
 }
 
-# Suppression des colonnes se terminant par "v1" ou "2019"
-centres_coutsv2 <- centres_coutsv2[, !grepl("2019$|v1$", names(centres_coutsv2))]
+
+# Suppression des colonnes se terminant par "2022" ou "2024" pour avoir un fichier propre
+dom_fonctv4 <- dom_fonctv4[, !grepl("_2019$|_v3$", names(dom_fonctv4))]
+```
+
+Vérification :
+
+```{r}
+dim(dom_fonctv4)
+```
+On supprime les colonnes qui ne sont pas présentes dans la calculette de 2024 (actualisee)
+
+```{r}
+dom_fonctv4 <- dom_fonctv4 %>% 
+  select(-`DF(s) cible(s) pour 2019`)
 ```
 
 ```{r}
-head(centres_coutsv2)
+head(dom_fonctv4)
 ```
+
 
 # Export du fichier actualisé
 
+On organise le fichier pour qu'il soit correct pour le futur import dans la calculette
+
 ```{r}
-FILE_KEY_OUT_S3 <- "202402-MAJ_Referentiels/Historique/centres_couts_actualises.csv"
+dom_fonctv4 <- dom_fonctv4 %>% 
+  select("Code_min","Sigle", ,"Code_prog", "Type", "Intitulé", "Libellé", 
+         "Imputable ?", "Début", "Fin", "Créé cette année", "Expiré", "DF(s) Cible(s) pour l'année : 2024", 
+         "Missions parlementaires")
+```
+
+```{r}
+FILE_KEY_OUT_S3 <- "202402-MAJ_Referentiels/Historique/domaines_fonctionnels_actualises.csv"
 BUCKET_OUT <- "marieguibert2"
 
 aws.s3::s3write_using(
-    centres_coutsv2,
+    dom_fonctv4,
     FUN = readr::write_csv, 
     object = FILE_KEY_OUT_S3,
     bucket = BUCKET_OUT,
@@ -384,7 +556,7 @@ aws.s3::s3write_using(
 # Export des programmes manquants
 
 ```{r}
-FILE_KEY_OUT_S3 <- "202402-MAJ_Referentiels/Historique/centres_couts_manquants.csv"
+FILE_KEY_OUT_S3 <- "202402-MAJ_Referentiels/Historique/domaines_fonctionnels_manquants.csv"
 BUCKET_OUT <- "marieguibert2"
 
 aws.s3::s3write_using(
@@ -396,3 +568,15 @@ aws.s3::s3write_using(
 )
 ```
 
+```{r}
+FILE_KEY_OUT_S3 <- "202402-MAJ_Referentiels/Historique/domaines_fonctionnels_manquants.csv"
+BUCKET_OUT <- "marieguibert2"
+
+aws.s3::s3write_using(
+    resultats_diffsup,
+    FUN = readr::write_csv, 
+    object = FILE_KEY_OUT_S3,
+    bucket = BUCKET_OUT,
+    opts = list("region" = "")
+)
+```
