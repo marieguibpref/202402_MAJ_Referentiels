@@ -13,7 +13,8 @@ On importe d'abord les données de la calculette actualisée
 
 ```{r warning = FALSE}
 BUCKET <- "marieguibert2"
-FILE_KEY_S3 <- "202402-MAJ_Referentiels/Fichiers_traites/Calculette_Chorus_2024-02-07_actualisee.xlsx"
+FILE_KEY_S3 <- "202402-MAJ_Referentiels/Fichiers_traites/Calculette_Chorus_2024-02-27_actualisee.xlsx"
+
 
 prog <- 
   aws.s3::s3read_using(
@@ -35,7 +36,7 @@ head(prog, 10)
 ```
 
 ```{r}
-FILE_KEY_S3 <- "202402-MAJ_Referentiels/Historique/xlsxCalculette_Chorus_2022-12-01.xlsx"
+FILE_KEY_S3 <- "202402-MAJ_Referentiels/Historique/Calculette/xlsxCalculette_Chorus_2022-12-01.xlsx"
 
 prog2022<- 
   aws.s3::s3read_using(
@@ -154,7 +155,7 @@ Les données de la calculette 2022 sont déjà importées et nous allons à pré
 On importe les données de la calculette de 2021
 
 ```{r}
-FILE_KEY_S3 <- "202402-MAJ_Referentiels/Historique/xlsxCalculette_Chorus_2021-12-01.xlsx"
+FILE_KEY_S3 <- "202402-MAJ_Referentiels/Historique/Calculette/xlsxCalculette_Chorus_2021-12-01.xlsx"
 
 prog2021 <- 
   aws.s3::s3read_using(
@@ -189,7 +190,7 @@ Les données de la calculette 2022 sont déjà importées et nous allons à pré
 On importe les données de la calculette de 2020
 
 ```{r}
-FILE_KEY_S3 <- "202402-MAJ_Referentiels/Historique/xlsxCalculette_Chorus_2020-12-01.xlsx"
+FILE_KEY_S3 <- "202402-MAJ_Referentiels/Historique/Calculette/xlsxCalculette_Chorus_2020-12-01.xlsx"
 
 prog2020 <- 
   aws.s3::s3read_using(
@@ -224,7 +225,7 @@ Les données de la calculette 2022 sont déjà importées et nous allons à pré
 On importe les données de la calculette de 2019
 
 ```{r}
-FILE_KEY_S3 <- "202402-MAJ_Referentiels/Historique/xlsxCalculette_Chorus_2019-12-01.xlsx"
+FILE_KEY_S3 <- "202402-MAJ_Referentiels/Historique/Calculette/xlsxCalculette_Chorus_2019-12-01.xlsx"
 
 prog2019 <- 
   aws.s3::s3read_using(
@@ -253,7 +254,7 @@ On remarque que le fichier mis à jour contient tous les programmes de 2022 et d
 # Export du fichier actualisé
 
 ```{r}
-FILE_KEY_OUT_S3 <- "202402-MAJ_Referentiels/Historique/Prog_actualises.csv"
+FILE_KEY_OUT_S3 <- "202402-MAJ_Referentiels/Historique/Prog_historique.csv"
 BUCKET_OUT <- "marieguibert2"
 
 aws.s3::s3write_using(
