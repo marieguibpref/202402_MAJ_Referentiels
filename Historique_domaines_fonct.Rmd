@@ -535,7 +535,7 @@ On organise le fichier pour qu'il soit correct pour le futur import dans la calc
 
 ```{r}
 dom_fonctv4 <- dom_fonctv4 %>% 
-  select("Code_min","Sigle", ,"Code_prog", "Type", "Intitulé", "Libellé", 
+  select("Code_min","Sigle", ,"Code_prog", "Type","Code", "Intitulé", "Libellé", 
          "Imputable ?", "Début", "Fin", "Créé cette année", "Expiré", "DF(s) Cible(s) pour l'année : 2024", 
          "Missions parlementaires")
 ```

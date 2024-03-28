@@ -583,7 +583,9 @@ On remet le fichier au bon format
 
 ```{r}
 ref_progv4 <- ref_progv4 %>% 
-  select(3:11, Code, Intitulé, 13:19, `Activité(s) Cible(s) pour l'année : 2024`)
+  select(Code_min, Sigle, Code_prog, Code_OS, Intitule_OS, Code_OP,Intitule_OP, Code_OB, 
+         Intitule_OB, Code, Intitulé, Libellé, `Domaine fonc. associé`, `Recette ou Dépense`, Début, Expiration, Fin, 
+         `Créé cette année`, Expiré, `Activité(s) Cible(s) pour l'année : 2024`)
 ```
 
 
@@ -592,7 +594,7 @@ FILE_KEY_OUT_S3 <- "202402-MAJ_Referentiels/Historique/ref_prog_historique.csv"
 BUCKET_OUT <- "marieguibert2"
 
 aws.s3::s3write_using(
-    progv1,
+    ref_progv4,
     FUN = readr::write_csv, 
     object = FILE_KEY_OUT_S3,
     bucket = BUCKET_OUT,
