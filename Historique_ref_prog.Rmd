@@ -14,7 +14,7 @@ On importe d'abord les données de la calculette actualisée
 
 ```{r warning = FALSE}
 BUCKET <- "marieguibert2"
-FILE_KEY_S3 <- "202402-MAJ_Referentiels/Calculette_Chorus_2024-02-07_actualiseev2.xlsx"
+FILE_KEY_S3 <- "202402-MAJ_Referentiels/Fichiers_traites/Calculette_Chorus_2024-02-27_actualisee.xlsx"
 
 ref_prog <- 
   aws.s3::s3read_using(
@@ -23,7 +23,7 @@ ref_prog <-
     skip = 8,
     col_types = c("text", "text", "text", "text", "text", 
                   "text", "text", "text", "text", "text", 
-                  "text", "text", "text", "date", "date", "date", 
+                  "text", "text", "text", "text", "date", "date", "date", 
                   "text", "text", "text"),
     object = FILE_KEY_S3,
     bucket = BUCKET,
@@ -61,7 +61,7 @@ head(ref_prog, 10)
 ```
 
 ```{r}
-FILE_KEY_S3 <- "202402-MAJ_Referentiels/Historique/xlsxCalculette_Chorus_2022-12-01.xlsx"
+FILE_KEY_S3 <- "202402-MAJ_Referentiels/Historique/Calculette/xlsxCalculette_Chorus_2022-12-01.xlsx"
 
 ref_prog2022 <- 
   aws.s3::s3read_using(
@@ -202,7 +202,7 @@ Les données de la calculette 2022 sont déjà importées et nous allons à pré
 On importe les données de la calculette de 2021
 
 ```{r}
-FILE_KEY_S3 <- "202402-MAJ_Referentiels/Historique/xlsxCalculette_Chorus_2021-12-01.xlsx"
+FILE_KEY_S3 <- "202402-MAJ_Referentiels/Historique/Calculette/xlsxCalculette_Chorus_2021-12-01.xlsx"
 
 ref_prog2021 <- 
   aws.s3::s3read_using(
@@ -330,7 +330,7 @@ Les données de la calculette 2022 sont déjà importées et nous allons à pré
 On importe les données de la calculette de 2020
 
 ```{r}
-FILE_KEY_S3 <- "202402-MAJ_Referentiels/Historique/xlsxCalculette_Chorus_2020-12-01.xlsx"
+FILE_KEY_S3 <- "202402-MAJ_Referentiels/Historique/Calculette/xlsxCalculette_Chorus_2020-12-01.xlsx"
 
 ref_prog2020 <- 
   aws.s3::s3read_using(
@@ -456,7 +456,7 @@ Les données de la calculette 2022 sont déjà importées et nous allons à pré
 On importe les données de la calculette de 2019
 
 ```{r}
-FILE_KEY_S3 <- "202402-MAJ_Referentiels/Historique/xlsxCalculette_Chorus_2019-12-01.xlsx"
+FILE_KEY_S3 <- "202402-MAJ_Referentiels/Historique/Calculette/xlsxCalculette_Chorus_2019-12-01.xlsx"
 
 ref_prog2019 <- 
   aws.s3::s3read_using(
