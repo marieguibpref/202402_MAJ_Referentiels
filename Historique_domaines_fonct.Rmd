@@ -18,7 +18,7 @@ On importe d'abord les données de la calculette actualisée de cette année
 
 ```{r warning = FALSE}
 BUCKET <- "marieguibert2"
-FILE_KEY_S3 <- "202402-MAJ_Referentiels/Calculette_Chorus_2024-02-07_actualiseev2.xlsx"
+FILE_KEY_S3 <- "202402-MAJ_Referentiels/Fichiers_traites/Calculette_Chorus_2024-02-27_actualisee.xlsx"
 
 dom_fonct <- 
   aws.s3::s3read_using(
@@ -54,7 +54,7 @@ head(dom_fonct)
 On importe à présent le fichier de 2022 :
 
 ```{r warning = FALSE}
-FILE_KEY_S3 <- "202402-MAJ_Referentiels/Historique/xlsxCalculette_Chorus_2022-12-01.xlsx"
+FILE_KEY_S3 <- "202402-MAJ_Referentiels/Historique/Calculette/xlsxCalculette_Chorus_2022-12-01.xlsx"
 
 
 dom_fonct2022 <- 
@@ -183,7 +183,7 @@ Les données de la calculette 2022 sont déjà importées et nous allons à pré
 On importe les données de la calculette de 2021
 
 ```{r warning = FALSE}
-FILE_KEY_S3 <- "202402-MAJ_Referentiels/Historique/xlsxCalculette_Chorus_2021-12-01.xlsx"
+FILE_KEY_S3 <- "202402-MAJ_Referentiels/Historique/Calculette/xlsxCalculette_Chorus_2021-12-01.xlsx"
 
 dom_fonct2021 <- 
   aws.s3::s3read_using(
@@ -303,7 +303,7 @@ Les données de la calculette 2022 sont déjà importées et nous allons à pré
 On importe les données de la calculette de 2020
 
 ```{r warning = FALSE}
-FILE_KEY_S3 <- "202402-MAJ_Referentiels/Historique/xlsxCalculette_Chorus_2020-12-01.xlsx"
+FILE_KEY_S3 <- "202402-MAJ_Referentiels/Historique/Calculette/xlsxCalculette_Chorus_2020-12-01.xlsx"
 
 dom_fonct2020 <- 
   aws.s3::s3read_using(
@@ -420,7 +420,7 @@ Les données de la calculette 2022 sont déjà importées et nous allons à pré
 On importe les données de la calculette de 2019
 
 ```{r warning = FALSE}
-FILE_KEY_S3 <- "202402-MAJ_Referentiels/Historique/xlsxCalculette_Chorus_2019-12-01.xlsx"
+FILE_KEY_S3 <- "202402-MAJ_Referentiels/Historique/Calculette/xlsxCalculette_Chorus_2019-12-01.xlsx"
 
 dom_fonct2019 <- 
   aws.s3::s3read_using(
