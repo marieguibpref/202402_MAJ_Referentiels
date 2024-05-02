@@ -508,14 +508,14 @@ Modification des dates :
     souvent actualisée
     
 ```{r}
-comp_ref_prog$Début <- ifelse(is.na(Début_drfip), 
-                              Début_shogun, 
-                              Début_drfip)
+comp_ref_prog$Début <- ifelse(is.na(comp_ref_prog$Début_drfip), 
+                              comp_ref_prog$Début_shogun, 
+                              comp_ref_prog$Début_drfip)
 
 
-comp_ref_prog$Début <- ifelse(is.na(Fin_shogun), 
-                              Fin_drfip, 
-                              Fin_shogun)
+comp_ref_prog$Fin <- ifelse(is.na(comp_ref_prog$Fin_shogun), 
+                              comp_ref_prog$Fin_drfip, 
+                              comp_ref_prog$Fin_shogun)
 ```
     
 
