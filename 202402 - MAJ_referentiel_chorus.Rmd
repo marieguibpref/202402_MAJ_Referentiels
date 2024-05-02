@@ -231,7 +231,7 @@ aws.s3::s3write_using(
 
 ### Calculette shogun
 
-```{r}
+```{r warning=FALSE}
 FILE_KEY_S3 <- "202402-MAJ_Referentiels/Calculette_Chorus_2024-02-27.xlsx"
 
 shogun_domaines_fonct <- 
@@ -392,7 +392,7 @@ aws.s3::s3write_using(
 
 ### Calculette shogun
 
-```{r}
+```{r warning = F}
 FILE_KEY_S3 <- "202402-MAJ_Referentiels/Calculette_Chorus_2024-02-27.xlsx"
 
 shogun_ref_prog <- 
@@ -506,13 +506,25 @@ Modification des dates :
     d'historique que celle de la drfip
 -   On ne garde pas la date de fin de la drfip car elle est moins
     souvent actualisée
+    
+```{r}
+comp_ref_prog$Début <- ifelse(is.na(Début_drfip), 
+                              Début_shogun, 
+                              Début_drfip)
+
+
+comp_ref_prog$Début <- ifelse(is.na(Fin_shogun), 
+                              Fin_drfip, 
+                              Fin_shogun)
+```
+    
 
 ```{r}
 comp_ref_prog <- comp_ref_prog %>% 
-  select(-Début_shogun,  # suppression des colonnes
-         -Fin_drfip) %>% 
-  rename("Début" = "Début_drfip" ,  # renommage pour correspondre au fichier attendu
-         "Fin" = "Fin_shogun")
+  select(-Début_shogun, 
+         -Début_drfip, 
+         -Fin_shogun, # suppression des colonnes
+         -Fin_drfip)
 
 head(comp_ref_prog)
 ```
@@ -613,6 +625,8 @@ shogun_centres_couts <- shogun_centres_couts %>%
   rename("Code_min" = "Code...1",
          "Code" = "Code...5")
 ```
+
+
 
 
 ```{r}
