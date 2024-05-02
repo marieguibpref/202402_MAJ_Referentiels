@@ -7,7 +7,6 @@ editor_options:
   markdown: 
     wrap: 72
 ---
-# A MODIFIER
 
 Ce document a pour but de mettre à jour les référentiels extraits de la
 calculette shogun grâce aux fichiers déposés sur Resana par la DRFIP.
@@ -527,16 +526,21 @@ Règle :\
 proches et les caractères spéciaux sont reconnus dans shogun
 
 ```{r}
-comp_ref_prog$Intitulé <- comp_ref_prog$Intitulé_shogun
+comp_ref_prog$Intitulé <- ifelse(!is.na(comp_ref_prog$Intitulé_shogun),
+                                 comp_ref_prog$Intitulé_shogun,
+                                 comp_ref_prog$Intitulé_drfip)
 
 # Supprimer les colonnes devenues redondantes 
 comp_ref_prog$Intitulé_shogun <- NULL
 comp_ref_prog$Intitulé_drfip <- NULL
 ```
+
 Pareil pour le libellé
 
 ```{r}
-comp_ref_prog$Libellé <- comp_ref_prog$Libellé_shogun
+comp_ref_prog$Libellé <- ifelse(!is.na(comp_ref_prog$Libellé_shogun),
+                                 comp_ref_prog$Libellé_shogun,
+                                 comp_ref_prog$Libellé_drfip)
 
 # Supprimer les colonnes devenues redondantes 
 comp_ref_prog$Libellé_shogun <- NULL
