@@ -174,11 +174,8 @@ on prend celui de shogun sinon on prend celui de la drfip\
 DRFIP
 
 ```{r}
-# Identifier les lignes avec des Intitulé_chorus répétées
-duplicated_rows <- duplicated(comp_prog$Intitulé_shogun)
-
 # Modifier la colonne Intitulé en fonction des conditions
-comp_prog$Intitulé <- ifelse(duplicated_rows, comp_prog$Intitulé_drfip, comp_prog$Intitulé_shogun)
+comp_prog$Intitulé <- ifelse(is.na(comp_prog$Intitulé_shogun), comp_prog$Intitulé_drfip, comp_prog$Intitulé_shogun)
 
 # Supprimer les colonnes devenues redondantes si nécessaire
 comp_prog$Intitulé_shogun <- NULL
